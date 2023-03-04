@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"math"
+	"regexp"
 )
 
 type Factor struct {
@@ -34,12 +35,30 @@ func ComputeNetScore(fs []Factor) float64 {
 	return sum
 }
 
-func ComputeRampTime(found int, total int) float64 {
+func ComputeRampTime(readme string) float64 {
 	// Compute Ramp-up time based on number of phrases found in README
-	if total == 0 {
-		return 0
+	rampUpTime := 0.0
+	res, _ := regexp.MatchString(`(?i)docs\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
 	}
-	return float64(found) / float64(total)
+
+	res, _ = regexp.MatchString(`(?i)quick start\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	res, _ = regexp.MatchString(`(?i)installation\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	res, _ = regexp.MatchString(`(?i)example\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	return rampUpTime
 }
 
 func ComputeCorrectness(watchers int64, stargazers int64, commits int64) float64 {

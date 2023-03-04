@@ -22,6 +22,24 @@ func runTask(url string, woutputch chan<- fileio.WorkerOutput) {
 		return
 	}
 
+	//Get dependency data from github
+	// pckJson, err := api.GetRepoDependency(github_url)
+	// if err != nil {
+	// 	logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " Dependency Errored:", err.Error())
+	// 	woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  Dependency Errored: %s", url, err.Error())}
+	// 	return
+	// }
+	// fmt.Println("Made it to the end", pckJson)
+
+	// get repository readme
+	readme, err := api.GetRepoReadme(github_url)
+	if err != nil {
+		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
+		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err.Error())
+		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  ScanRepo Errored: %s", url, err.Error())}
+		return
+	}
+
 	// Get Data from Github API
 	license_key, err := api.GetRepoLicense(github_url)
 	if err != nil {
@@ -55,20 +73,12 @@ func runTask(url string, woutputch chan<- fileio.WorkerOutput) {
 		return
 	}
 
-	// Download repository and scan
-	rampup_score, err := metrics.ScanRepo(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  ScanRepo Errored: %s", url, err.Error())}
-		return
-	}
-
 	// Compute scores
 	correctness_score := metrics.ComputeCorrectness(watchers, stargazers, totalCommits) // no data yet
 	responsiveness_score := metrics.ComputeResponsiveness(avg_lifespan)
 	busfactor_score := metrics.ComputeBusFactor(top_recent_commits, total_recent_commits)
 	license_score := metrics.ComputeLicenseScore(license_key)
+	rampup_score := metrics.ComputeRampTime(readme)
 
 	rampup_factor := metrics.Factor{Weight: 0.15, Value: rampup_score, AllOrNothing: false}
 	correctness_factor := metrics.Factor{Weight: 0.15, Value: correctness_score, AllOrNothing: false}

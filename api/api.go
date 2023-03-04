@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,12 +47,28 @@ type ContributorStatsResponse []struct {
 	} `json:"weeks"`
 }
 
+type DependencyResponse struct {
+	PackageJson *string `json:"package_json"`
+}
+
+type ReadmeResponse struct {
+	ReadMe *string `json:"readme"`
+}
+
 func (self LicenseResponse) Validate() bool {
 	return self.License.Key != nil && self.License.Name != nil && self.License.Url != nil
 }
 
+func (self DependencyResponse) Validate() bool {
+	return self.PackageJson != nil
+}
+
 func (self IssueResponse) Validate() bool {
 	return self.CreatedAt != nil && self.ClosedAt != nil
+}
+
+func (self ReadmeResponse) Validate() bool {
+	return self.ReadMe != nil
 }
 
 func (self ContributorStatsResponse) Validate() bool {
@@ -77,6 +95,10 @@ type Responsiveness struct {
 type Contributor struct {
 	Name          string `json:"name"`
 	RecentCommits int    `json:"recent_commits"`
+}
+
+type Dependency struct {
+	PackageJson string `json:"package_json"`
 }
 
 func ValidateInput(inputUrl string) (string, string, string, error) {
@@ -119,7 +141,7 @@ func ValidateInput(inputUrl string) (string, string, string, error) {
 // Build and a request to the given endpoint; return HTTP response
 func SendGithubRequestHelper(endpoint string, token string) (res *http.Response, err error, statusCode int) {
 	// build GitHub API request
-	req, _ := http.NewRequest(http.MethodGet, endpoint, nil)
+	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Add("Accept", "application/vnd.github+json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
@@ -158,7 +180,7 @@ func DecodeResponse[T any](res *http.Response) (jsonRes T, err error) {
 		err = decoder.Decode(&jsonRes)
 		if err == io.EOF {
 			err = nil
-			return
+			return jsonRes, err
 		} else if err != nil {
 			return
 		}
@@ -259,6 +281,81 @@ func SendGithubRequestList[T Response](endpoint string, token string, maxPages i
 	}
 }
 
+func GetRepoReadme(url string) (string, error) {
+	user, repo, token, err := ValidateInput(url)
+
+	if err != nil {
+		return "", fmt.Errorf("GetRepoReadme: %s", err.Error())
+	}
+	// Create an HTTP client and set the Authorization header to include the token
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/%s/%s/readme", user, repo), nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	// Send the request and decode the response body from base64
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	responseContent := buf.Bytes()
+
+	var jsonMap map[string]string
+	json.Unmarshal([]byte(responseContent), &jsonMap)
+	readmeContent := jsonMap["content"]
+	if err != nil {
+		panic(err)
+	}
+	statusCode := resp.StatusCode
+	readme, err := base64.StdEncoding.DecodeString(readmeContent)
+	//res, err, statusCode := SendGithubRequest[ReadmeResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/readme", user, repo), token)
+
+	if err != nil {
+		if statusCode == 404 {
+			return "", nil // if license not found, just return empty string
+		}
+		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
+		return "", fmt.Errorf("GetRepoReadme: %s", err.Error())
+	}
+
+	if readme != nil {
+		return string(readme), nil
+	} else {
+		return "", fmt.Errorf("GetRepoReadme: Readme pointer is null")
+	}
+}
+
+func GetRepoDependency(url string) (string, error) {
+	user, repo, token, err := ValidateInput(url)
+
+	if err != nil {
+		return "", fmt.Errorf("GetRepoDependency: %s", err.Error())
+	}
+	res, err, statusCode := SendGithubRequest[DependencyResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/package.json", user, repo), token)
+
+	if err != nil {
+		if statusCode == 404 {
+			return "", nil // if license not found, just return empty string
+		}
+		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
+		return "", fmt.Errorf("GetRepoDependency: %s", err.Error())
+	}
+
+	if res.PackageJson != nil {
+		return *res.PackageJson, nil
+	} else {
+		return "", fmt.Errorf("GetRepoDependency: PackageJson pointer is null")
+	}
+}
+
 func GetRepoLicense(url string) (string, error) {
 	// Returns information about the repository's license
 	user, repo, token, err := ValidateInput(url)
@@ -272,7 +369,7 @@ func GetRepoLicense(url string) (string, error) {
 			return "", nil // if license not found, just return empty string
 		}
 		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
-		return "", fmt.Errorf("GetRepoLicense: %s", err.Error())
+		return "", nil //fmt.Errorf("GetRepoLicense: %s", err.Error())
 	}
 
 	if res.License.Name != nil {
