@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 )
@@ -33,6 +34,27 @@ func ComputeNetScore(fs []Factor) float64 {
 	}
 
 	return sum
+}
+
+func ComputeVersion(dependencies map[string]interface{}) float64 {
+	pinnedDep := 0
+	var depScore float64
+	re, _ := regexp.Compile(`(\d+)\.(\d+)\.(\d+)`)
+
+	if dependencies != nil {
+		for _, version := range dependencies {
+			v := fmt.Sprintf("%v", version)
+			res := re.MatchString(v)
+			if res {
+				pinnedDep++
+			}
+		}
+		depScore = float64(pinnedDep) / float64(len(dependencies))
+	} else {
+		depScore = 0.0
+	}
+
+	return depScore
 }
 
 func ComputeRampTime(readme string) float64 {

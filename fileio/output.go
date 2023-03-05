@@ -32,6 +32,7 @@ type Rating struct {
 	Busfactor      float64 `json:"BUS_FACTOR_SCORE"`
 	Responsiveness float64 `json:"RESPONSIVE_MAINTAINER_SCORE"`
 	License        float64 `json:"LICENSE_SCORE"`
+	Version        float64 `json:"VERSION_PINNING_SCORE"`
 }
 
 type WorkerOutput struct {

@@ -29,7 +29,7 @@ func Test_MakeRatingsChannel_Success(t *testing.T) {
 
 func Test_Make_json_string_Success(t *testing.T) {
 	goodUrl := "https://github.com/facebook/react"
-	r := Rating{goodUrl, 75, 5, 10, 15, 20, 25}
+	r := Rating{goodUrl, 75, 5, 10, 15, 20, 25, 15}
 	jsonStringString := Make_json_string(r)
 
 	if jsonStringString == "" {

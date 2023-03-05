@@ -333,26 +333,58 @@ func GetRepoReadme(url string) (string, error) {
 	}
 }
 
-func GetRepoDependency(url string) (string, error) {
+func GetRepoDependency(url string) (map[string]interface{}, error) {
 	user, repo, token, err := ValidateInput(url)
-
 	if err != nil {
-		return "", fmt.Errorf("GetRepoDependency: %s", err.Error())
+		return nil, fmt.Errorf("GetRepoReadme: %s", err.Error())
 	}
-	res, err, statusCode := SendGithubRequest[DependencyResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/package.json", user, repo), token)
+	// Create an HTTP client and set the Authorization header to include the token
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/package.json", user, repo), nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
+	// Send the request and decode the response body from base64
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	statusCode := resp.StatusCode
+	defer resp.Body.Close()
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	responseContent := buf.Bytes()
+	var jsonMap map[string]string
+	json.Unmarshal([]byte(responseContent), &jsonMap)
+	readmeContent := jsonMap["content"]
+	if err != nil {
+		panic(err)
+	}
+	pckJson, err := base64.StdEncoding.DecodeString(readmeContent)
+	var pckJsonMap map[string]interface{}
+	json.Unmarshal([]byte(pckJson), &pckJsonMap)
+	dependencies, ok := pckJsonMap["dependencies"]
+	var dependenciesMap map[string]interface{}
+	if ok {
+		dependenciesMap = dependencies.(map[string]interface{})
+	}
 	if err != nil {
 		if statusCode == 404 {
-			return "", nil // if license not found, just return empty string
+			return nil, nil // if license not found, just return empty string
 		}
 		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
-		return "", fmt.Errorf("GetRepoDependency: %s", err.Error())
+		return nil, fmt.Errorf("GetRepoDependency: %s", err.Error())
 	}
 
-	if res.PackageJson != nil {
-		return *res.PackageJson, nil
+	if dependenciesMap != nil {
+		return dependenciesMap, nil
 	} else {
-		return "", fmt.Errorf("GetRepoDependency: PackageJson pointer is null")
+		return nil, nil
 	}
 }
 
