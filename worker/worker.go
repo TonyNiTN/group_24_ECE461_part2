@@ -22,20 +22,20 @@ func runTask(url string, woutputch chan<- fileio.WorkerOutput) {
 		return
 	}
 
-	//Get dependency data from github
-	depMap, err := api.GetRepoDependency(github_url)
-	if err != nil {
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " Dependency Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  Dependency Errored: %s", url, err.Error())}
-		return
-	}
-
 	// get repository readme
 	readme, err := api.GetRepoReadme(github_url)
 	if err != nil {
 		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
 		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err.Error())
 		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  ScanRepo Errored: %s", url, err.Error())}
+		return
+	}
+
+	//Get dependency data from github
+	depMap, err := api.GetRepoDependency(github_url)
+	if err != nil {
+		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " Dependency Errored:", err.Error())
+		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  Dependency Errored: %s", url, err.Error())}
 		return
 	}
 

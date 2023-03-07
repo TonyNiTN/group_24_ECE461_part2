@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -48,11 +47,11 @@ type ContributorStatsResponse []struct {
 }
 
 type DependencyResponse struct {
-	PackageJson *string `json:"package_json"`
+	Content *string `json:"content"`
 }
 
 type ReadmeResponse struct {
-	ReadMe *string `json:"readme"`
+	Content *string `json:"content"`
 }
 
 func (self LicenseResponse) Validate() bool {
@@ -60,7 +59,7 @@ func (self LicenseResponse) Validate() bool {
 }
 
 func (self DependencyResponse) Validate() bool {
-	return self.PackageJson != nil
+	return self.Content != nil
 }
 
 func (self IssueResponse) Validate() bool {
@@ -68,7 +67,7 @@ func (self IssueResponse) Validate() bool {
 }
 
 func (self ReadmeResponse) Validate() bool {
-	return self.ReadMe != nil
+	return self.Content != nil
 }
 
 func (self ContributorStatsResponse) Validate() bool {
@@ -95,10 +94,6 @@ type Responsiveness struct {
 type Contributor struct {
 	Name          string `json:"name"`
 	RecentCommits int    `json:"recent_commits"`
-}
-
-type Dependency struct {
-	PackageJson string `json:"package_json"`
 }
 
 func ValidateInput(inputUrl string) (string, string, string, error) {
@@ -283,108 +278,53 @@ func SendGithubRequestList[T Response](endpoint string, token string, maxPages i
 
 func GetRepoReadme(url string) (string, error) {
 	user, repo, token, err := ValidateInput(url)
+	if err != nil {
+		return "", fmt.Errorf("GetReadme: %s", err.Error())
+	}
 
-	if err != nil {
-		return "", fmt.Errorf("GetRepoReadme: %s", err.Error())
-	}
-	// Create an HTTP client and set the Authorization header to include the token
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/%s/%s/readme", user, repo), nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	// Send the request and decode the response body from base64
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	responseContent := buf.Bytes()
-
-	var jsonMap map[string]string
-	json.Unmarshal([]byte(responseContent), &jsonMap)
-	readmeContent := jsonMap["content"]
-	if err != nil {
-		panic(err)
-	}
-	statusCode := resp.StatusCode
-	readme, err := base64.StdEncoding.DecodeString(readmeContent)
-	//res, err, statusCode := SendGithubRequest[ReadmeResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/readme", user, repo), token)
-
+	res, err, statusCode := SendGithubRequest[ReadmeResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/readme", user, repo), token)
 	if err != nil {
 		if statusCode == 404 {
 			return "", nil // if license not found, just return empty string
 		}
 		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
-		return "", fmt.Errorf("GetRepoReadme: %s", err.Error())
+		return "", nil //fmt.Errorf("GetRepoLicense: %s", err.Error())
 	}
 
-	if readme != nil {
+	if res.Content != nil {
+		readme, err := base64.StdEncoding.DecodeString(*res.Content)
+		if err != nil {
+			return "", fmt.Errorf("GetReadme: Error decoding base 64")
+		}
 		return string(readme), nil
 	} else {
-		return "", fmt.Errorf("GetRepoReadme: Readme pointer is null")
+		return "", fmt.Errorf("Getreadme: readme pointer is null")
 	}
 }
 
-func GetRepoDependency(url string) (map[string]interface{}, error) {
+func GetRepoDependency(url string) (string, error) {
 	user, repo, token, err := ValidateInput(url)
 	if err != nil {
-		return nil, fmt.Errorf("GetRepoReadme: %s", err.Error())
+		return "", fmt.Errorf("GetReadme: %s", err.Error())
 	}
-	// Create an HTTP client and set the Authorization header to include the token
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/package.json", user, repo), nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
-	// Send the request and decode the response body from base64
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	statusCode := resp.StatusCode
-	defer resp.Body.Close()
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	responseContent := buf.Bytes()
-	var jsonMap map[string]string
-	json.Unmarshal([]byte(responseContent), &jsonMap)
-	readmeContent := jsonMap["content"]
-	if err != nil {
-		panic(err)
-	}
-	pckJson, err := base64.StdEncoding.DecodeString(readmeContent)
-	var pckJsonMap map[string]interface{}
-	json.Unmarshal([]byte(pckJson), &pckJsonMap)
-	dependencies, ok := pckJsonMap["dependencies"]
-	var dependenciesMap map[string]interface{}
-	if ok {
-		dependenciesMap = dependencies.(map[string]interface{})
-	}
+	res, err, statusCode := SendGithubRequest[DependencyResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/package.json", user, repo), token)
 	if err != nil {
 		if statusCode == 404 {
-			return nil, nil // if license not found, just return empty string
+			return "", nil // if license not found, just return empty string
 		}
 		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
-		return nil, fmt.Errorf("GetRepoDependency: %s", err.Error())
+		return "", nil //fmt.Errorf("GetRepoLicense: %s", err.Error())
 	}
 
-	if dependenciesMap != nil {
-		return dependenciesMap, nil
+	if res.Content != nil {
+		pckJson, err := base64.StdEncoding.DecodeString(*res.Content)
+		if err != nil {
+			return "", fmt.Errorf("GetRepoDependency: Error decoding base 64")
+		}
+		return string(pckJson), nil
 	} else {
-		return nil, nil
+		return "", fmt.Errorf("GetRepoDependency: pckJson pointer is null")
 	}
 }
 

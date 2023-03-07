@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -36,20 +37,27 @@ func ComputeNetScore(fs []Factor) float64 {
 	return sum
 }
 
-func ComputeVersion(dependencies map[string]interface{}) float64 {
+func ComputeVersion(pckJson string) float64 {
+	var pckJsonMap map[string]interface{}
+	json.Unmarshal([]byte(pckJson), &pckJsonMap)
+	dependencies, ok := pckJsonMap["dependencies"]
+	var dependenciesMap map[string]interface{}
+	if ok {
+		dependenciesMap = dependencies.(map[string]interface{})
+	}
 	pinnedDep := 0
 	var depScore float64
 	re, _ := regexp.Compile(`(\d+)\.(\d+)\.(\d+)`)
 
-	if dependencies != nil {
-		for _, version := range dependencies {
+	if dependenciesMap != nil {
+		for _, version := range dependenciesMap {
 			v := fmt.Sprintf("%v", version)
 			res := re.MatchString(v)
 			if res {
 				pinnedDep++
 			}
 		}
-		depScore = float64(pinnedDep) / float64(len(dependencies))
+		depScore = float64(pinnedDep) / float64(len(dependenciesMap))
 	} else {
 		depScore = 0.0
 	}
