@@ -1,7 +1,10 @@
 package metrics
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
+	"regexp"
 )
 
 type Factor struct {
@@ -34,12 +37,58 @@ func ComputeNetScore(fs []Factor) float64 {
 	return sum
 }
 
-func ComputeRampTime(found int, total int) float64 {
-	// Compute Ramp-up time based on number of phrases found in README
-	if total == 0 {
-		return 0
+func ComputeVersion(pckJson string) float64 {
+	var pckJsonMap map[string]interface{}
+	json.Unmarshal([]byte(pckJson), &pckJsonMap)
+	dependencies, ok := pckJsonMap["dependencies"]
+	var dependenciesMap map[string]interface{}
+	if ok {
+		dependenciesMap = dependencies.(map[string]interface{})
 	}
-	return float64(found) / float64(total)
+	pinnedDep := 0
+	var depScore float64
+	re, _ := regexp.Compile(`(\d+)\.(\d+)\.(\d+)`)
+
+	if dependenciesMap != nil {
+		for _, version := range dependenciesMap {
+			v := fmt.Sprintf("%v", version)
+			res := re.MatchString(v)
+			if res {
+				pinnedDep++
+			}
+		}
+		depScore = float64(pinnedDep) / float64(len(dependenciesMap))
+	} else {
+		depScore = 0.0
+	}
+
+	return depScore
+}
+
+func ComputeRampTime(readme string) float64 {
+	// Compute Ramp-up time based on number of phrases found in README
+	rampUpTime := 0.0
+	res, _ := regexp.MatchString(`(?i)docs\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	res, _ = regexp.MatchString(`(?i)quick start\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	res, _ = regexp.MatchString(`(?i)installation\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	res, _ = regexp.MatchString(`(?i)example\b`, readme)
+	if res {
+		rampUpTime = rampUpTime + 0.25
+	}
+
+	return rampUpTime
 }
 
 func ComputeCorrectness(watchers int64, stargazers int64, commits int64) float64 {

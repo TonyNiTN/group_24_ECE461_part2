@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,12 +46,28 @@ type ContributorStatsResponse []struct {
 	} `json:"weeks"`
 }
 
+type DependencyResponse struct {
+	Content *string `json:"content"`
+}
+
+type ReadmeResponse struct {
+	Content *string `json:"content"`
+}
+
 func (self LicenseResponse) Validate() bool {
 	return self.License.Key != nil && self.License.Name != nil && self.License.Url != nil
 }
 
+func (self DependencyResponse) Validate() bool {
+	return self.Content != nil
+}
+
 func (self IssueResponse) Validate() bool {
 	return self.CreatedAt != nil && self.ClosedAt != nil
+}
+
+func (self ReadmeResponse) Validate() bool {
+	return self.Content != nil
 }
 
 func (self ContributorStatsResponse) Validate() bool {
@@ -119,7 +136,7 @@ func ValidateInput(inputUrl string) (string, string, string, error) {
 // Build and a request to the given endpoint; return HTTP response
 func SendGithubRequestHelper(endpoint string, token string) (res *http.Response, err error, statusCode int) {
 	// build GitHub API request
-	req, _ := http.NewRequest(http.MethodGet, endpoint, nil)
+	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Add("Accept", "application/vnd.github+json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
@@ -158,7 +175,7 @@ func DecodeResponse[T any](res *http.Response) (jsonRes T, err error) {
 		err = decoder.Decode(&jsonRes)
 		if err == io.EOF {
 			err = nil
-			return
+			return jsonRes, err
 		} else if err != nil {
 			return
 		}
@@ -259,6 +276,58 @@ func SendGithubRequestList[T Response](endpoint string, token string, maxPages i
 	}
 }
 
+func GetRepoReadme(url string) (string, error) {
+	user, repo, token, err := ValidateInput(url)
+	if err != nil {
+		return "", fmt.Errorf("GetReadme: %s", err.Error())
+	}
+
+	res, err, statusCode := SendGithubRequest[ReadmeResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/readme", user, repo), token)
+	if err != nil {
+		if statusCode == 404 {
+			return "", nil // if license not found, just return empty string
+		}
+		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
+		return "", nil //fmt.Errorf("GetRepoLicense: %s", err.Error())
+	}
+
+	if res.Content != nil {
+		readme, err := base64.StdEncoding.DecodeString(*res.Content)
+		if err != nil {
+			return "", fmt.Errorf("GetReadme: Error decoding base 64")
+		}
+		return string(readme), nil
+	} else {
+		return "", fmt.Errorf("Getreadme: readme pointer is null")
+	}
+}
+
+func GetRepoDependency(url string) (string, error) {
+	user, repo, token, err := ValidateInput(url)
+	if err != nil {
+		return "", fmt.Errorf("GetReadme: %s", err.Error())
+	}
+
+	res, err, statusCode := SendGithubRequest[DependencyResponse](fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/package.json", user, repo), token)
+	if err != nil {
+		if statusCode == 404 {
+			return "", nil // if license not found, just return empty string
+		}
+		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
+		return "", nil //fmt.Errorf("GetRepoLicense: %s", err.Error())
+	}
+
+	if res.Content != nil {
+		pckJson, err := base64.StdEncoding.DecodeString(*res.Content)
+		if err != nil {
+			return "", fmt.Errorf("GetRepoDependency: Error decoding base 64")
+		}
+		return string(pckJson), nil
+	} else {
+		return "", fmt.Errorf("GetRepoDependency: pckJson pointer is null")
+	}
+}
+
 func GetRepoLicense(url string) (string, error) {
 	// Returns information about the repository's license
 	user, repo, token, err := ValidateInput(url)
@@ -272,7 +341,7 @@ func GetRepoLicense(url string) (string, error) {
 			return "", nil // if license not found, just return empty string
 		}
 		logger.DebugMsg(fmt.Sprintf("SendGithubRequest(): %s status code: %d\n", err.Error(), statusCode))
-		return "", fmt.Errorf("GetRepoLicense: %s", err.Error())
+		return "", nil //fmt.Errorf("GetRepoLicense: %s", err.Error())
 	}
 
 	if res.License.Name != nil {
