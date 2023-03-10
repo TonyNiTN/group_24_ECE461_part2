@@ -24,3 +24,5 @@ cache.txt
 **/*.terraform**
 **/*.DS_Store*
 /bin
+scanner.go
+scanwithgo.go
