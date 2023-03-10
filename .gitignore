@@ -29,3 +29,5 @@ scanwithgo.go
 cache.txt
 cache
 trusted-package-registry-070b11c116a8.json
+scanner.go
+scanwithgo.go

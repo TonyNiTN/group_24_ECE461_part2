@@ -125,7 +125,11 @@ func GetCorrectnessFactors(url string) (watchers int, stargazers int, totalCommi
 	return watchers, stargazers, totalCommits, nil
 }
 
+<<<<<<< HEAD
 func GetReviewFactors(url string) (all_prs int, reviewd_prs int, err error) {
+=======
+func GetReviewFactors(url string) (all_prs int64, reviewd_prs int64, err error) {
+>>>>>>> c93cf06 (add reviewed prs metric (#3))
 	ownerName, repoName, token, err := ValidateInput(url)
 	if err != nil {
 		return 0, 0, fmt.Errorf("GetReviewFactors: Error on validate input")
@@ -149,7 +153,7 @@ func GetReviewFactors(url string) (all_prs int, reviewd_prs int, err error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("Reading body failed with errorr %s\n", err)
 	}
-	all_prs = int(factors.Data.Repository.Item1.TotalCount)
-	reviewd_prs = int(factors.Data.Repository.Item2.TotalCount)
+	all_prs = factors.Data.Repository.Item1.TotalCount
+	reviewd_prs = factors.Data.Repository.Item2.TotalCount
 	return all_prs, reviewd_prs, nil
 }
