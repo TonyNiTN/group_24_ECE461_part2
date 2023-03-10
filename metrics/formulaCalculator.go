@@ -37,7 +37,7 @@ func ComputeNetScore(fs []Factor) float64 {
 	return sum
 }
 
-func ComputeVersion(pckJson string) float64 {
+func ComputeVersionScore(pckJson string) float64 {
 	var pckJsonMap map[string]interface{}
 	json.Unmarshal([]byte(pckJson), &pckJsonMap)
 	dependencies, ok := pckJsonMap["dependencies"]
@@ -65,7 +65,14 @@ func ComputeVersion(pckJson string) float64 {
 	return depScore
 }
 
-func ComputeRampTime(readme string) float64 {
+func ComputeReviewScore(all_prs int, reviewed_prs int) float64 {
+	if all_prs != 0 && reviewed_prs != 0 {
+		return float64(reviewed_prs) / float64(all_prs)
+	}
+	return 0.0
+}
+
+func ComputeRampTimeScore(readme string) float64 {
 	// Compute Ramp-up time based on number of phrases found in README
 	rampUpTime := 0.0
 	res, _ := regexp.MatchString(`(?i)docs\b`, readme)
