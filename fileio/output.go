@@ -33,6 +33,7 @@ type Rating struct {
 	Responsiveness float64 `json:"RESPONSIVE_MAINTAINER_SCORE"`
 	License        float64 `json:"LICENSE_SCORE"`
 	Version        float64 `json:"VERSION_PINNING_SCORE"`
+	Review         float64 `json:"CODE_REVIEW_SCORE"`
 }
 
 type WorkerOutput struct {
