@@ -391,7 +391,6 @@ func GetRepoIssueAverageLifespan(url string) (float64, error) {
 	} else {
 		responsiveness = Responsiveness{AvgLifespan: 0, NumSampled: 0}
 	}
-
 	return responsiveness.AvgLifespan, nil
 }
 

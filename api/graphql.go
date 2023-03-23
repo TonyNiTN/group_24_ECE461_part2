@@ -92,7 +92,7 @@ func buildCorrectnessQuery(ownerName string, repoName string) (query map[string]
 	return correctnessQuery
 }
 
-func GetCorrectnessFactors(url string) (watchers int64, stargazers int64, totalCommits int64, err error) {
+func GetCorrectnessFactors(url string) (watchers int, stargazers int, totalCommits int, err error) {
 	ownerName, repoName, token, err := ValidateInput(url)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("GetCorrectnessFactors: Error on validate input")
@@ -118,14 +118,15 @@ func GetCorrectnessFactors(url string) (watchers int64, stargazers int64, totalC
 		return 0, 0, 0, fmt.Errorf("Reading body failed with errorr %s\n", err)
 	}
 
-	watchers = factors.Data.Repository.StargazerCount
-	stargazers = factors.Data.Repository.Watchers.TotalCount
-	totalCommits = factors.Data.Repository.DefaultBranchRef.Target.History.TotalCount
+	watchers = int(factors.Data.Repository.StargazerCount)
+	stargazers = int(factors.Data.Repository.Watchers.TotalCount)
+	totalCommits = int(factors.Data.Repository.DefaultBranchRef.Target.History.TotalCount)
 
 	return watchers, stargazers, totalCommits, nil
 }
 
-func GetReviewFactors(url string) (all_prs int64, reviewd_prs int64, err error) {
+
+func GetReviewFactors(url string) (all_prs int, reviewd_prs int, err error) {
 	ownerName, repoName, token, err := ValidateInput(url)
 	if err != nil {
 		return 0, 0, fmt.Errorf("GetReviewFactors: Error on validate input")
@@ -149,7 +150,8 @@ func GetReviewFactors(url string) (all_prs int64, reviewd_prs int64, err error) 
 	if err != nil {
 		return 0, 0, fmt.Errorf("Reading body failed with errorr %s\n", err)
 	}
-	all_prs = factors.Data.Repository.Item1.TotalCount
-	reviewd_prs = factors.Data.Repository.Item2.TotalCount
+	all_prs = int(factors.Data.Repository.Item1.TotalCount)
+	reviewd_prs = int(factors.Data.Repository.Item2.TotalCount)
+
 	return all_prs, reviewd_prs, nil
 }

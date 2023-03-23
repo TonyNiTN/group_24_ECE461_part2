@@ -17,5 +17,6 @@ test_stale_repositories_log
 .netlify
 *.html
 sitemap.xml
-scanner.go
-scanwithgo.go
+
+cache.txt
+
