@@ -98,7 +98,7 @@ func ComputeRampTimeScore(readme string) float64 {
 	return rampUpTime
 }
 
-func ComputeCorrectness(watchers int64, stargazers int64, commits int64) float64 {
+func ComputeCorrectness(watchers int, stargazers int, commits int) float64 {
 	// Correctness is determined by a sum three factors: watchers, stargazers, and commits
 	// Each of these are calculated using a an exponential decay function to ensure that
 	// the domain is from -inf to inf, while the range is still between 0 and the weight (0.117, 0.550, or 0.333)

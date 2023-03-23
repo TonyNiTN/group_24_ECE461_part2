@@ -9,7 +9,7 @@ import (
 // test with bad url
 func TestWorkerBadInput(t *testing.T) {
 	worker_output_ch := make(chan fileio.WorkerOutput, 1)
-	runTask("https://badurl.com/blabla/test", worker_output_ch)
+	RunTask("https://badurl.com/blabla/test")
 	close(worker_output_ch)
 	output := <-worker_output_ch
 	if output.WorkerErr == nil {
@@ -22,7 +22,7 @@ func TestWorkerRatingFail(t *testing.T) {
 	worker_output_ch := make(chan fileio.WorkerOutput, 1)
 
 	incorrectUrl := "https://github.com/incorrectownername/react"
-	runTask(incorrectUrl, worker_output_ch)
+	RunTask(incorrectUrl)
 	close(worker_output_ch)
 
 	for wo := range worker_output_ch {
@@ -38,7 +38,7 @@ func TestWorkerLicenseFail(t *testing.T) {
 	worker_output_ch := make(chan fileio.WorkerOutput, 1)
 
 	incorrectUrl := "https://github.com/expressjs/express"
-	runTask(incorrectUrl, worker_output_ch)
+	RunTask(incorrectUrl)
 	close(worker_output_ch)
 	for wo := range worker_output_ch {
 		rating := wo.WorkerRating

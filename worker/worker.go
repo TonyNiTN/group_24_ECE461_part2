@@ -1,7 +1,13 @@
 package worker
 
 import (
+	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/19chonm/461_1_23/api"
 	"github.com/19chonm/461_1_23/fileio"
@@ -9,42 +15,96 @@ import (
 	"github.com/19chonm/461_1_23/metrics"
 )
 
-func runTask(url string, woutputch chan<- fileio.WorkerOutput) {
+type Conts struct {
+	int1 int
+	int2 int
+	int3 int
+}
+
+func RunTask(url string) *fileio.Rating {
 	// fmt.Println("My job is", url)
 	logger.InfoMsg("My job is", url)
+	cache := make(map[string]interface{})
+	if _, err := os.Stat("cache"); os.IsNotExist(err) {
+		// Create cache if it does not exist
+		file, err := os.Create("cache")
+		if err != nil {
+			logger.DebugMsg("Error creating cache")
+		}
+		cache["init"] = 1
+		err = WriteMapToFile(cache, "cache")
+		if err != nil {
+			logger.DebugMsg("Error writing to cache file")
+		}
+		defer file.Close()
+		logger.DebugMsg("Created cache")
+	} else if err != nil {
+		logger.DebugMsg("Error checking for the cache file.")
+	} else {
+		logger.DebugMsg("cache exists")
+		gob.Register(Conts{})
+		cache, err = ReadMapFromFile("cache")
+		if err != nil {
+			logger.DebugMsg("Error loading cache from file!")
+		}
+
+	}
 
 	// Convert url to Github URL
 	github_url, err := api.GetGithubUrl(url)
 	if err != nil {
 		// fmt.Println("worker: ERROR Unable to get github url ", url, " Error:", err)
 		logger.DebugMsg("worker: ERROR Unable to get github url ", url, " Error:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  Error: %s", url, err.Error())}
-		return
+		return nil
 	}
 
+	var license_key string
+	cachedResponse, found := cache[fmt.Sprintf("%s-license", url)]
+	if found {
+		license_key = cachedResponse.(string)
+	} else {
+		license_key, err = api.GetRepoLicense(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " License Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " License Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-license", url)] = license_key
+
+	}
 	// Get Data from Github API
-	license_key, err := api.GetRepoLicense(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " License Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " License Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  License Errored: %s", url, err.Error())}
-		return
+
+	var avg_lifespan float64
+	cachedResponse, found = cache[fmt.Sprintf("%s-issues", url)]
+	if found {
+		avg_lifespan = cachedResponse.(float64)
+	} else {
+		avg_lifespan, err = api.GetRepoIssueAverageLifespan(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " AvgLifespan Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " AvgLifespan Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-issues", url)] = avg_lifespan
+
 	}
 
-	avg_lifespan, err := api.GetRepoIssueAverageLifespan(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " AvgLifespan Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " AvgLifespan Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  AvgLifespan Errored: %s", url, err.Error())}
-		return
-	}
-
-	top_recent_commits, total_recent_commits, err := api.GetRepoContributors(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ContributorsCommits Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " ContributorsCommits Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  ContributorsCommits Errored: %s", url, err.Error())}
-		return
+	cachedResponse, found = cache[fmt.Sprintf("%s-contributors", url)]
+	var top_recent_commits int
+	var total_recent_commits int
+	if found {
+		cr := cachedResponse.(string)
+		resp := strings.Fields(cr)
+		top_recent_commits, _ = strconv.Atoi(resp[0])
+		total_recent_commits, _ = strconv.Atoi(resp[1])
+	} else {
+		top_recent_commits, total_recent_commits, err = api.GetRepoContributors(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ContributorsCommits Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " ContributorsCommits Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-contributors", url)] = strconv.Itoa(top_recent_commits) + " " + strconv.Itoa(total_recent_commits)
 	}
 
 	//Get All pull request data from github
@@ -64,39 +124,78 @@ func runTask(url string, woutputch chan<- fileio.WorkerOutput) {
 	// 	woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  Reviewed Pull Requests Errored: %s", url, err.Error())}
 	// 	return
 	// }
-	total_prs, reviewed_prs, err := api.GetReviewFactors(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, "GetReviewFactors Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  Graphql Errored: %s", url, err.Error())}
-		return
+
+	var total_prs int
+	var reviewed_prs int
+	cachedResponse, found = cache[fmt.Sprintf("%s-review", url)]
+	if found {
+		cr := cachedResponse.(string)
+		resp := strings.Fields(cr)
+		total_prs, _ = strconv.Atoi(resp[0])
+		reviewed_prs, _ = strconv.Atoi(resp[1])
+	} else {
+		total_prs, reviewed_prs, err = api.GetReviewFactors(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, "GetReviewFactors Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-review", url)] = strconv.Itoa(int(total_prs)) + " " + strconv.Itoa(int(reviewed_prs))
 	}
 
+	var readme string
+	cachedResponse, found = cache[fmt.Sprintf("%s-readme", url)]
+	if found {
+		readme = cachedResponse.(string)
+	} else {
+		readme, err = api.GetRepoReadme(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, "GetRepoReadme Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-readme", url)] = string(readme)
+
+	}
 	// get repository readme
-	readme, err := api.GetRepoReadme(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, "GetRepoReadme Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  Readme Errored: %s", url, err.Error())}
-		return
-	}
 
+	var depMap string
+	cachedResponse, found = cache[fmt.Sprintf("%s-dependency", url)]
+	if found {
+		depMap = cachedResponse.(string)
+	} else {
+		depMap, err = api.GetRepoDependency(github_url)
+		if err != nil {
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " Dependency Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-dependency", url)] = string(depMap)
+
+	}
 	//Get dependency data from github
-	depMap, err := api.GetRepoDependency(github_url)
-	if err != nil {
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " Dependency Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get github url %s  Dependency Errored: %s", url, err.Error())}
-		return
+
+	var watchers, stargazers, totalCommits int
+	cachedResponse, found = cache[fmt.Sprintf("%s-correctness", url)]
+	if found {
+		cr := cachedResponse.(string)
+		resp := strings.Fields(cr)
+		watchers, _ = strconv.Atoi(resp[0])
+		stargazers, _ = strconv.Atoi(resp[1])
+		totalCommits, _ = strconv.Atoi(resp[2])
+	} else {
+		watchers, stargazers, totalCommits, err = api.GetCorrectnessFactors(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " GetCorrectnessFactors Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " GetCorrectnessFactors Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-correctness", url)] = strconv.Itoa(int(watchers)) + " " + strconv.Itoa(int(stargazers)) + " " + strconv.Itoa(int(totalCommits))
 	}
 
-	watchers, stargazers, totalCommits, err := api.GetCorrectnessFactors(github_url)
+	err = WriteMapToFile(cache, "cache")
 	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " GetCorrectnessFactors Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " GetCorrectnessFactors Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  GetCorrectnessFactors Errored: %s", url, err.Error())}
-		return
+		logger.DebugMsg("worker: ERROR writing to cache file ")
 	}
-
 	// Compute scores
 	correctness_score := metrics.ComputeCorrectness(watchers, stargazers, totalCommits) // no data yet
 	responsiveness_score := metrics.ComputeResponsiveness(avg_lifespan)
@@ -126,5 +225,38 @@ func runTask(url string, woutputch chan<- fileio.WorkerOutput) {
 		Version:        version_score,
 		Review:         review_score,
 	}
-	woutputch <- fileio.WorkerOutput{WorkerRating: r, WorkerErr: nil} // Send rating to rating channel to be sorted
+	return &r
+}
+
+func ReadMapFromFile(filename string) (map[string]interface{}, error) {
+	// Read file contents into byte slice
+	jsonData, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal JSON into map[string]interface{}
+	var data map[string]interface{}
+	err = json.Unmarshal(jsonData, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func WriteMapToFile(data map[string]interface{}, filename string) error {
+	// Convert map to JSON bytes
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	// Write JSON bytes to file
+	err = ioutil.WriteFile(filename, jsonData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
