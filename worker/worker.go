@@ -190,7 +190,6 @@ func RunTask(url string) *fileio.Rating {
 			return nil
 		}
 		cache[fmt.Sprintf("%s-correctness", url)] = strconv.Itoa(int(watchers)) + " " + strconv.Itoa(int(stargazers)) + " " + strconv.Itoa(int(totalCommits))
-
 	}
 
 	err = WriteMapToFile(cache, "cache")
