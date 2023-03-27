@@ -26,3 +26,24 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  lint-js:
+    runs-on: ubuntu-latest
+    name: Run ESLint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+
+      - name: Install NPM packages
+        run: cd frontend/my-app/ && npm install
+
+      - name: Lint
+        run: cd frontend/my-app/ && npm run lint
+
+      # - name: Check formatting
+      #   run: cd frontend/my-app/ && npm run prettier-check
