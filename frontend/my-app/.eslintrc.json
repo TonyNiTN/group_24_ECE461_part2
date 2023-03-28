@@ -17,8 +17,10 @@
     },
     "plugins": [
         "react",
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "tailwindcss"
     ],
     "rules": {
+        "tailwindcss/classnames-order": "warn"
     }
 }

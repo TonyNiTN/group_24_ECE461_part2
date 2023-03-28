@@ -5,7 +5,7 @@ import SearchBar from "../components/search/searchbar";
 import UploadButton from "../components/buttons/uploadButton";
 import OutlineButton from "../components/buttons/rateButton";
 
-const Home = () => {
+const HomePage = () => {
     return(
         <div className="">
             <SearchBar/>
@@ -16,4 +16,4 @@ const Home = () => {
     )
 }
 
-export default Home
+export default HomePage

@@ -1,12 +1,28 @@
 import { useState } from 'react'
-import Home from './pages/home'
+import HomePage from './pages/home-page'
+import ErrorPage from './pages/error-page';
+import LoginPage from './pages/login-page';
+
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <HomePage/>,
+    errorElement: <ErrorPage/>
+  },
+  {
+    path: "/login",
+    element: <LoginPage/>
+  }
+]);
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <Home/>
-    
+    <RouterProvider router={router} />
   )
 }
 
