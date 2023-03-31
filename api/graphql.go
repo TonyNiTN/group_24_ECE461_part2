@@ -125,6 +125,7 @@ func GetCorrectnessFactors(url string) (watchers int, stargazers int, totalCommi
 	return watchers, stargazers, totalCommits, nil
 }
 
+
 func GetReviewFactors(url string) (all_prs int, reviewd_prs int, err error) {
 	ownerName, repoName, token, err := ValidateInput(url)
 	if err != nil {
@@ -151,5 +152,6 @@ func GetReviewFactors(url string) (all_prs int, reviewd_prs int, err error) {
 	}
 	all_prs = int(factors.Data.Repository.Item1.TotalCount)
 	reviewd_prs = int(factors.Data.Repository.Item2.TotalCount)
+
 	return all_prs, reviewd_prs, nil
 }

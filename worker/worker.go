@@ -58,6 +58,7 @@ func RunTask(url string) *fileio.Rating {
 		return nil
 	}
 
+
 	var license_key string
 	cachedResponse, found := cache[fmt.Sprintf("%s-license", url)]
 	if found {
@@ -171,6 +172,7 @@ func RunTask(url string) *fileio.Rating {
 		}
 		cache[fmt.Sprintf("%s-dependency", url)] = string(depMap)
 
+
 	}
 	//Get dependency data from github
 
@@ -190,6 +192,7 @@ func RunTask(url string) *fileio.Rating {
 			return nil
 		}
 		cache[fmt.Sprintf("%s-correctness", url)] = strconv.Itoa(int(watchers)) + " " + strconv.Itoa(int(stargazers)) + " " + strconv.Itoa(int(totalCommits))
+
 	}
 
 	err = WriteMapToFile(cache, "cache")
