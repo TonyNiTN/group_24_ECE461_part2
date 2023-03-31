@@ -17,4 +17,5 @@ test_stale_repositories_log
 .netlify
 *.html
 sitemap.xml
-cache.txt
+cache
+trusted-package-registry-070b11c116a8.json

@@ -24,7 +24,7 @@ func StartWorkers(urlch <-chan string, worker_output_ch chan<- fileio.WorkerOutp
 					wg.Done()
 					return
 				}
-				runTask(url, worker_output_ch)
+				RunTask(url)
 			}
 		}()
 	}
