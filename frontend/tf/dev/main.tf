@@ -24,14 +24,22 @@ resource "random_id" "bucket_prefix" {
 }
 
 resource "google_storage_bucket" "static_website" {
+<<<<<<< HEAD
   name          = "ece461-dev.tonyni.ca"
   location      = "US"
   #storage_class = "COLDLINE"
   #uniform_bucket_level_access = true
+=======
+  name          = "${random_id.bucket_prefix.hex}-static-website-bucket"
+  location      = "US"
+  #storage_class = "COLDLINE"
+#   uniform_bucket_level_access = true
+>>>>>>> 705f2a5 (deployment using terraform to gcp)
   website {
     main_page_suffix = "index.html"
   }
 }
+<<<<<<< HEAD
 # Make bucket public
 resource "google_storage_bucket_iam_member" "member" {
   provider = google
@@ -81,6 +89,8 @@ resource "google_compute_global_forwarding_rule" "default" {
   target                = google_compute_target_http_proxy.default.id
   ip_address            = google_compute_global_address.dev_cdn_ip.id
 }
+=======
+>>>>>>> 705f2a5 (deployment using terraform to gcp)
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexHtml" {
@@ -92,14 +102,20 @@ resource "google_storage_bucket_object" "indexHtml" {
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexCSS" {
+<<<<<<< HEAD
   name         = "assets/index-6e9558c7.css"
   source      = "../../my-app/dist/assets/index-6e9558c7.css"
   content_type = "text/css"
+=======
+  name         = "assets/index-8cb29f15.css"
+  source      = "../../my-app/dist/assets/index-8cb29f15.css"
+>>>>>>> 705f2a5 (deployment using terraform to gcp)
   bucket       = google_storage_bucket.static_website.id
 }
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexJS" {
+<<<<<<< HEAD
   name         = "assets/index-d8d261c8.js"
   source      = "../../my-app/dist/assets/index-d8d261c8.js"
   content_type = "text/javascript"
@@ -109,3 +125,31 @@ resource "google_storage_bucket_object" "indexJS" {
 output "cdn_ip_addr" {
   value = google_compute_global_address.dev_cdn_ip.address
 }
+=======
+  name         = "assets/index-80bbade2.js"
+  source      = "../../my-app/dist/assets/index-80bbade2.js"
+  bucket       = google_storage_bucket.static_website.id
+}
+
+resource "google_cloud_run_service" "bucketfwdsvc" {
+  name     = "bucketfwd"
+  location = "us-east1"
+
+  template {
+    spec{
+        containers {
+            image = "gcr.io/group24ece404/bucketfwd:0.1.1"
+        }
+    } 
+  }
+  autogenerate_revision_name = true
+}
+
+# Make bucket public
+# resource "google_storage_bucket_iam_member" "member" {
+#   provider = google
+#   bucket   = google_storage_bucket.static_website.name
+#   role     = "roles/storage.objectViewer"
+#   member   = "allUsers"
+# }
+>>>>>>> 705f2a5 (deployment using terraform to gcp)
