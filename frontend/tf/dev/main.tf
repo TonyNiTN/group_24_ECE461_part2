@@ -92,42 +92,20 @@ resource "google_storage_bucket_object" "indexHtml" {
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexCSS" {
-  name         = "assets/index-3b87810b.css"
-  source      = "../../my-app/dist/assets/index-3b87810b.css"
+  name         = "assets/index-6e9558c7.css"
+  source      = "../../my-app/dist/assets/index-6e9558c7.css"
   content_type = "text/css"
   bucket       = google_storage_bucket.static_website.id
 }
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexJS" {
-  name         = "assets/index-34d954e5.js"
-  source      = "../../my-app/dist/assets/index-34d954e5.js"
+  name         = "assets/index-d8d261c8.js"
+  source      = "../../my-app/dist/assets/index-d8d261c8.js"
   content_type = "text/javascript"
   bucket       = google_storage_bucket.static_website.id
 }
 
-# Upload a simple index.html page to the bucket
-resource "google_storage_bucket_object" "outputCSS" {
-  name         = "assets/output.css"
-  source      = "../../my-app/dist/assets/output.css"
-  content_type = "text/css"
-  bucket       = google_storage_bucket.static_website.id
-}
-
-
 output "cdn_ip_addr" {
   value = google_compute_global_address.dev_cdn_ip.address
 }
-# resource "google_cloud_run_service" "frontendsvc" {
-#   name     = "frontend"
-#   location = "us-east1"
-
-#   template {
-#     spec{
-#         containers {
-#             image = "gcr.io/group24ece404/frontend:0.1"
-#         }
-#     } 
-#   }
-#   autogenerate_revision_name = true
-# }
