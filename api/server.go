@@ -36,6 +36,8 @@ func RunServer() {
 
 	//ROUTES
 
+	//Score package endpoint
+
 	//Get all packages
 	r.GET("/packages", func(c *gin.Context) {
 		packages, err := client.ListAllPackages()
@@ -115,8 +117,10 @@ func RunServer() {
 		c.JSON(http.StatusOK, gin.H{"message": "package uploaded"})
 	})
 
+	port := os.Getenv("PORT")
+
 	srv := &http.Server{
-		Addr:    ":8000",
+		Addr:    port,
 		Handler: r,
 	}
 
