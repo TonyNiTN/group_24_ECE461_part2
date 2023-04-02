@@ -24,8 +24,3 @@ cache.txt
 **/*.terraform**
 **/*.DS_Store*
 /bin
-scanner.go
-scanwithgo.go
-cache.txt
-cache
-trusted-package-registry-070b11c116a8.json

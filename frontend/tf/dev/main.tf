@@ -25,6 +25,7 @@ resource "random_id" "bucket_prefix" {
 
 resource "google_storage_bucket" "static_website" {
 <<<<<<< HEAD
+<<<<<<< HEAD
   name          = "ece461-dev.tonyni.ca"
   location      = "US"
   #storage_class = "COLDLINE"
@@ -35,11 +36,20 @@ resource "google_storage_bucket" "static_website" {
   #storage_class = "COLDLINE"
 #   uniform_bucket_level_access = true
 >>>>>>> 705f2a5 (deployment using terraform to gcp)
+=======
+  name          = "ece461-dev.tonyni.ca"
+  location      = "US"
+  #storage_class = "COLDLINE"
+  #uniform_bucket_level_access = true
+>>>>>>> 9934c95 (deployment for frontend using cdn)
   website {
     main_page_suffix = "index.html"
   }
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9934c95 (deployment for frontend using cdn)
 # Make bucket public
 resource "google_storage_bucket_iam_member" "member" {
   provider = google
@@ -89,8 +99,11 @@ resource "google_compute_global_forwarding_rule" "default" {
   target                = google_compute_target_http_proxy.default.id
   ip_address            = google_compute_global_address.dev_cdn_ip.id
 }
+<<<<<<< HEAD
 =======
 >>>>>>> 705f2a5 (deployment using terraform to gcp)
+=======
+>>>>>>> 9934c95 (deployment for frontend using cdn)
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexHtml" {
@@ -103,6 +116,7 @@ resource "google_storage_bucket_object" "indexHtml" {
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexCSS" {
 <<<<<<< HEAD
+<<<<<<< HEAD
   name         = "assets/index-6e9558c7.css"
   source      = "../../my-app/dist/assets/index-6e9558c7.css"
   content_type = "text/css"
@@ -110,11 +124,17 @@ resource "google_storage_bucket_object" "indexCSS" {
   name         = "assets/index-8cb29f15.css"
   source      = "../../my-app/dist/assets/index-8cb29f15.css"
 >>>>>>> 705f2a5 (deployment using terraform to gcp)
+=======
+  name         = "assets/index-3b87810b.css"
+  source      = "../../my-app/dist/assets/index-3b87810b.css"
+  content_type = "text/css"
+>>>>>>> 9934c95 (deployment for frontend using cdn)
   bucket       = google_storage_bucket.static_website.id
 }
 
 # Upload a simple index.html page to the bucket
 resource "google_storage_bucket_object" "indexJS" {
+<<<<<<< HEAD
 <<<<<<< HEAD
   name         = "assets/index-d8d261c8.js"
   source      = "../../my-app/dist/assets/index-d8d261c8.js"
@@ -128,23 +148,23 @@ output "cdn_ip_addr" {
 =======
   name         = "assets/index-80bbade2.js"
   source      = "../../my-app/dist/assets/index-80bbade2.js"
+=======
+  name         = "assets/index-34d954e5.js"
+  source      = "../../my-app/dist/assets/index-34d954e5.js"
+  content_type = "text/javascript"
+>>>>>>> 9934c95 (deployment for frontend using cdn)
   bucket       = google_storage_bucket.static_website.id
 }
 
-resource "google_cloud_run_service" "bucketfwdsvc" {
-  name     = "bucketfwd"
-  location = "us-east1"
-
-  template {
-    spec{
-        containers {
-            image = "gcr.io/group24ece404/bucketfwd:0.1.1"
-        }
-    } 
-  }
-  autogenerate_revision_name = true
+# Upload a simple index.html page to the bucket
+resource "google_storage_bucket_object" "outputCSS" {
+  name         = "assets/output.css"
+  source      = "../../my-app/dist/assets/output.css"
+  content_type = "text/css"
+  bucket       = google_storage_bucket.static_website.id
 }
 
+<<<<<<< HEAD
 # Make bucket public
 # resource "google_storage_bucket_iam_member" "member" {
 #   provider = google
@@ -153,3 +173,22 @@ resource "google_cloud_run_service" "bucketfwdsvc" {
 #   member   = "allUsers"
 # }
 >>>>>>> 705f2a5 (deployment using terraform to gcp)
+=======
+
+output "cdn_ip_addr" {
+  value = google_compute_global_address.dev_cdn_ip.address
+}
+# resource "google_cloud_run_service" "frontendsvc" {
+#   name     = "frontend"
+#   location = "us-east1"
+
+#   template {
+#     spec{
+#         containers {
+#             image = "gcr.io/group24ece404/frontend:0.1"
+#         }
+#     } 
+#   }
+#   autogenerate_revision_name = true
+# }
+>>>>>>> 9934c95 (deployment for frontend using cdn)
