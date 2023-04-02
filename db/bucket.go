@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"os"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 type DB struct {
@@ -19,8 +17,7 @@ type DB struct {
 }
 
 func NewBucketClient(ctx context.Context, projectID, bucketName string) (*DB, error) {
-	creds := option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-	client, err := storage.NewClient(ctx, creds)
+	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, err
 	}

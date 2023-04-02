@@ -10,11 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/19chonm/461_1_23/db"
 	"github.com/19chonm/461_1_23/logger"
 	"github.com/gin-gonic/gin"
-	"google.golang.org/api/iterator"
 )
 
 func RunServer() {
@@ -33,6 +31,7 @@ func RunServer() {
 
 	//Initialize go gin router
 	r := gin.Default()
+	r.Use(CORSMiddleware())
 
 	//ROUTES
 
@@ -118,9 +117,12 @@ func RunServer() {
 	})
 
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	srv := &http.Server{
-		Addr:    port,
+		Addr:    ":" + port,
 		Handler: r,
 	}
 
@@ -158,38 +160,19 @@ func RunServer() {
 	logger.DebugMsg("Server exiting")
 }
 
-func ListPackages(c *gin.Context) {
-	const (
-		projectID  = "your-project-id"
-		bucketName = "your-bucket-name"
-	)
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
 
-	// create client to interact with Google Cloud Storage
-	client, err := storage.NewClient(context.Background())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer client.Close()
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST,HEAD,PATCH, OPTIONS, GET, PUT")
 
-	// get the bucket handle
-	bucket := client.Bucket(bucketName)
-
-	// list all objects in the bucket
-	var packages []string
-	query := &storage.Query{}
-	objects := bucket.Objects(context.Background(), query)
-	for {
-		attrs, err := objects.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
 			return
 		}
-		packages = append(packages, attrs.Name)
-	}
 
-	c.JSON(http.StatusOK, gin.H{"packages": packages})
+		c.Next()
+	}
 }
