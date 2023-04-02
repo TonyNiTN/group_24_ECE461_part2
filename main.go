@@ -1,7 +1,9 @@
 package main
 
-import "github.com/19chonm/461_1_23/cli/commands"
+import (
+	"github.com/19chonm/461_1_23/api"
+)
 
 func main() {
-	commands.Execute()
+	api.RunServer()
 }

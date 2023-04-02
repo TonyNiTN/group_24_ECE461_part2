@@ -18,5 +18,10 @@ test_stale_repositories_log
 *.html
 sitemap.xml
 
+cache
+trusted-package-registry-070b11c116a8.json
+=======
+
 cache.txt
+
 
