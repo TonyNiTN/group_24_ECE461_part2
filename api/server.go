@@ -35,6 +35,9 @@ func RunServer() {
 	r.Use(CORSMiddleware())
 
 	//ROUTES
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "Welcome!, Use /packages to see a list of packages in the database, refer to the milestone 4 document for details on usage.")
+	})
 
 	//Score package endpoint
 
