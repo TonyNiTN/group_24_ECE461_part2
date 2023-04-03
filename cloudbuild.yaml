@@ -1,7 +1,11 @@
+secrets:
+  - secretEnv:
+      GITHUB_TOKEN: projects/28745226556/secrets/GithubToken
+
 steps:
 - name: 'golang:1.19'
   id: 'Run tests'
-  env: ['GO111MODULE=on', 'LOG_LEVEL=1', 'LOG_FILE=mylog.log']
+  env: ['GO111MODULE=on', 'LOG_LEVEL=1', 'LOG_FILE=mylog.log', 'GITHUB_TOKEN=$_GITHUB_TOKEN']
   args: ['go', 'test', './...']
 
 - name: 'gcr.io/cloud-builders/docker'
