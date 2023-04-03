@@ -36,7 +36,7 @@ func RunServer() {
 
 	//ROUTES
 	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "Welcome!, Use /packages to see a list of packages in the database, refer to the milestone 4 document for details on usage.")
+		c.JSON(http.StatusOK, "Welcome, Use /packages to see a list of packages in the database, refer to the milestone 4 document for details on usage.")
 	})
 
 	//Score package endpoint
