@@ -28,6 +28,7 @@ func RunServer() {
 		fmt.Println("failed to create GCS client!")
 	}
 	defer client.Close()
+
 	gin.SetMode(gin.ReleaseMode)
 
 	//Initialize go gin router
