@@ -1,6 +1,6 @@
 secrets:
   - kmsKeyName: projects/28745226556/locations/us-central1/keyRings/auth-token/cryptoKeys/tpr-token-crypto
-  - secretEnv:
+    secretEnv:
       GITHUB_TOKEN: projects/28745226556/secrets/GithubToken
 
 steps:
