@@ -7,7 +7,7 @@ steps:
 - name: 'golang:1.19'
   id: 'Run tests'
   env: ['GO111MODULE=on', 'LOG_LEVEL=1', 'LOG_FILE=mylog.log']
-  args: ['bash', '-c', 'GITHUB_TOKEN=$GITHUB_TOKEN go test ./...']
+  args: ['bash', '-c', 'GITHUB_TOKEN=$_GITHUB_TOKEN go test ./...']
 
 - name: 'gcr.io/cloud-builders/docker'
   id: build_docker_image
