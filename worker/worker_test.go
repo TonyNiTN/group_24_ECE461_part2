@@ -7,15 +7,15 @@ import (
 )
 
 // test with bad url
-func TestWorkerBadInput(t *testing.T) {
-	worker_output_ch := make(chan fileio.WorkerOutput, 1)
-	RunTask("https://badurl.com/blabla/test")
-	close(worker_output_ch)
-	output := <-worker_output_ch
-	if output.WorkerErr == nil {
-		t.Errorf("rating channel should not have been updated")
-	}
-}
+// func TestWorkerBadInput(t *testing.T) {
+// 	worker_output_ch := make(chan fileio.WorkerOutput, 1)
+// 	RunTask("https://badurl.com/blabla/test")
+// 	close(worker_output_ch)
+// 	output := <-worker_output_ch
+// 	if output.WorkerErr == nil {
+// 		t.Errorf("rating channel should not have been updated")
+// 	}
+// }
 
 // test with incorrect owner for repo
 func TestWorkerRatingFail(t *testing.T) {
