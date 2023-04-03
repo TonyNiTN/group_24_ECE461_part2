@@ -1,0 +1,26 @@
+steps:
+- name: 'golang:1.19'
+  id: 'Run tests'
+  env: ['GO111MODULE=on']
+  args: ['go', 'test', './...']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/trusted-package-repository/team24:$SHORT_SHA', '.']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/trusted-package-registry/team24:$SHORT_SHA']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+  - 'run'
+  - 'deploy'
+  - 'team24'
+  - '--image'
+  - 'gcr.io/trusted-package-registry/team24:$SHORT_SHA'
+  - '--region'
+  - 'us-central1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+

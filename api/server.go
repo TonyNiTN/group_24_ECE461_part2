@@ -29,6 +29,8 @@ func RunServer() {
 	}
 	defer client.Close()
 
+	gin.SetMode(gin.ReleaseMode)
+
 	//Initialize go gin router
 	r := gin.Default()
 	r.Use(CORSMiddleware())
