@@ -7,7 +7,7 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   id: build_docker_image
   entrypoint: 'bash'
-  args: ['build', '-t', 'gcr.io/trusted-package-registry/team24:$SHORT_SHA', '.']
+  args: ['docker', 'build', '-t', 'gcr.io/trusted-package-registry/team24:$SHORT_SHA', '.']
 
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'gcr.io/trusted-package-registry/team24:$SHORT_SHA']
