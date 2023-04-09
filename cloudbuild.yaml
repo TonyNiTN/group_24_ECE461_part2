@@ -11,8 +11,7 @@ steps:
   args:
   - '-c'
   - |
-    docker build -t gcr.io/$PROJECT_ID/SERVICE_NAME:$SHORT_SHA - <<EOF
-    # Write your Dockerfile instructions here, for example:
+    docker build -t gcr.io/trusted-package-registry/team24:$SHORT_SHA - <<EOF
     FROM golang:1.19 AS build
 
     WORKDIR /app
