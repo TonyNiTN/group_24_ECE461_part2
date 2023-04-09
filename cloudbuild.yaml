@@ -6,7 +6,7 @@ secrets:
 steps:
 - name: 'golang:1.19'
   id: 'Run tests'
-  env: ['GO111MODULE=on', 'LOG_LEVEL=1', 'LOG_FILE=mylog.log', 'GITHUB_TOKEN=${_GITHUB_TOKEN}']
+  env: ['GO111MODULE=on', 'LOG_LEVEL=1', 'LOG_FILE=mylog.log', 'GITHUB_TOKEN=$_GITHUB_TOKEN']
   args: ['go', 'test', './...']
 
 - name: 'gcr.io/cloud-builders/docker'
@@ -40,7 +40,7 @@ steps:
     ENV PORT 8080
 
     ENV LOG_LEVEL 2
-    
+
     ENV LOG_FILE mylog.log
 
     CMD ["/app/main"]
