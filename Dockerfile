@@ -16,6 +16,8 @@ WORKDIR /app
 
 COPY --from=build /app/main /app/main
 
+COPY views/ /app/views/
+
 EXPOSE 8080
 
 ENV PORT 8080
