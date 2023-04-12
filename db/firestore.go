@@ -63,7 +63,7 @@ func (db *Table) UploadPackage(ctx context.Context, client *firestore.Client, pa
 
 	_, err := client.Collection("packages").Doc(id).Set(ctx, packageData)
 	if err != nil {
-		fmt.Errorf("error creating package")
+		logger.DebugMsg("error creating package")
 		return err
 	}
 

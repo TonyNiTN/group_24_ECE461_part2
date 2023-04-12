@@ -44,7 +44,6 @@ func RunServer() {
 
 	//Initialize go gin router
 	r := gin.Default()
-	r.LoadHTMLGlob("views/*")
 	r.Use(CORSMiddleware())
 
 	//ROUTES
@@ -100,11 +99,7 @@ func RunServer() {
 		//if err != nil {
 		//	fmt.Println("error listing all packages in the database!")
 		//}
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"packages":  packages,
-			"pageSize":  pageSize,
-			"pageToken": pageToken,
-		})
+		c.JSON(http.StatusOK, packages)
 	})
 
 	//Score package endpoint

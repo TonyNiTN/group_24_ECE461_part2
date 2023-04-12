@@ -14,8 +14,6 @@ FROM alpine:3.14
 
 COPY --from=build /app/main /app/main
 
-COPY --from=build /app/views/ /app/views/
-
 EXPOSE 8080
 
 ENV PORT 8080
