@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/19chonm/461_1_23/api"
+	"github.com/19chonm/461_1_23/server"
 )
 
 func main() {
-	api.RunServer()
+	server.RunServer()
 }
