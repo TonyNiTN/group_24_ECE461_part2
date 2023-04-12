@@ -12,8 +12,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
 FROM alpine:3.14
 
-WORKDIR /app
-
 COPY --from=build /app/main /app/main
 
 COPY --from=build /app/views/ /app/views/
