@@ -58,6 +58,20 @@ func RunTask(url string) *fileio.Rating {
 		return nil
 	}
 
+	var license_key string
+	cachedResponse, found := cache[fmt.Sprintf("%s-license", url)]
+	if found {
+		license_key = cachedResponse.(string)
+	} else {
+		license_key, err = api.GetRepoLicense(github_url)
+		if err != nil {
+			// fmt.Println("worker: ERROR Unable to get data for ", github_url, " License Errored:", err)
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " License Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-license", url)] = license_key
+
+	}
 	// Get Data from Github API
 
 	var avg_lifespan float64
@@ -155,12 +169,19 @@ func RunTask(url string) *fileio.Rating {
 	}
 
 	// get repository readme
-	readme, err := api.GetRepoReadme(github_url)
-	if err != nil {
-		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " ScanRepo Errored:", err)
-		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, "GetRepoReadme Errored:", err.Error())
-		woutputch <- fileio.WorkerOutput{WorkerErr: fmt.Errorf("worker: ERROR Unable to get data for %s  Readme Errored: %s", url, err.Error())}
-		return
+
+	var depMap string
+	cachedResponse, found = cache[fmt.Sprintf("%s-dependency", url)]
+	if found {
+		depMap = cachedResponse.(string)
+	} else {
+		depMap, err = api.GetRepoDependency(github_url)
+		if err != nil {
+			logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " Dependency Errored:", err.Error())
+			return nil
+		}
+		cache[fmt.Sprintf("%s-dependency", url)] = string(depMap)
+
 	}
 
 	//Get dependency data from github
