@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"os"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 type DB struct {
@@ -16,8 +18,14 @@ type DB struct {
 	ctx    context.Context
 }
 
+type PackageSource struct {
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
+}
+
 func NewBucketClient(ctx context.Context, projectID, bucketName string) (*DB, error) {
-	client, err := storage.NewClient(ctx)
+	creds := option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	client, err := storage.NewClient(ctx, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -62,31 +70,62 @@ func (db *DB) GetPackageInfo(packageName string) (string, error) {
 	return fmt.Sprintf("Name: %s, Size: %d, LastModified: %s", attrs.Name, attrs.Size, attrs.Updated), nil
 }
 
-func (db *DB) SearchPackage(packageName string) ([]string, error) {
-	var packages []string
+// func (db *DB) SearchFile(packageName string) ([]string, error) {
+// 	var packages []string
 
-	query := &storage.Query{
-		Prefix: packageName,
-	}
+// 	query := &storage.Query{
+// 		Prefix: packageName,
+// 	}
 
-	it := db.bucket.Objects(db.ctx, query)
+// 	it := db.bucket.Objects(db.ctx, query)
+// 	for {
+// 		objAttrs, err := it.Next()
+// 		if err == iterator.Done {
+// 			break
+// 		}
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		packages = append(packages, objAttrs.Name)
+// 	}
+
+// 	return packages, nil
+// }
+
+func (db *DB) SearchFile(packageID string) (string, error) {
+	objectIterator := db.bucket.Objects(db.ctx, nil)
+
+	// Iterate over each object in the bucket
 	for {
-		objAttrs, err := it.Next()
+		objectAttrs, err := objectIterator.Next()
 		if err == iterator.Done {
+			// We have iterated over all objects in the bucket
 			break
 		}
 		if err != nil {
-			return nil, err
+			return "", fmt.Errorf("error iterating over files in the bucket")
 		}
 
-		packages = append(packages, objAttrs.Name)
-	}
+		// Retrieve the metadata for the object
+		objectMetadata := objectAttrs.Metadata
 
-	return packages, nil
+		// Check if the object has the metadata field you're interested in
+		if objectMetadata["id"] == packageID {
+			return objectAttrs.Name, nil
+
+		}
+	}
+	return "", fmt.Errorf("file not found in the bucket!")
 }
 
-func (db *DB) DownloadPackage(packageName string, w io.Writer) error {
-	obj := db.bucket.Object(packageName)
+func (db *DB) DownloadFile(packageID string, w io.Writer) error {
+	filename, err := db.SearchFile(packageID)
+	if err != nil {
+		fmt.Errorf("error searching for the file in the bucket!")
+	}
+
+	obj := db.bucket.Object(filename)
 	rc, err := obj.NewReader(db.ctx)
 	if err != nil {
 		return err
@@ -112,10 +151,13 @@ func (db *DB) RemovePackage(packageName string) error {
 	return nil
 }
 
-func (db *DB) UploadPackage(packageName string, r multipart.File) error {
+func (db *DB) UploadFile(packageName string, r multipart.File, id string) error {
 	obj := db.bucket.Object(packageName)
 
 	wc := obj.NewWriter(db.ctx)
+	wc.Metadata = map[string]string{
+		"id": id,
+	}
 	defer wc.Close()
 
 	_, err := io.Copy(wc, r)
