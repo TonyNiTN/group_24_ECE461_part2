@@ -4,10 +4,6 @@ steps:
   env: ['GO111MODULE=on', 'LOG_LEVEL=1', 'LOG_FILE=mylog.log', 'GITHUB_TOKEN=${_GITHUB_TOKEN}']
   args: ['go', 'test', './...']
 
-- name: 'gcr.io/cloud-builders/npm'
-  args: ['run', 'build']
-  dir: 'views/'
-
 - name: 'gcr.io/cloud-builders/docker'
   id: build_docker_image
   args: ['build', '-t', 'gcr.io/trusted-package-registry/team24:$SHORT_SHA', '.']

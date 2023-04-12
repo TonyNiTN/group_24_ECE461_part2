@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY --from=build /app/main /app/main
 
-COPY views/ /app/views/
+COPY views/index.html /app/views/
 
 EXPOSE 8080
 
