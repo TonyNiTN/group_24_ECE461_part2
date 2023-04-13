@@ -1,5 +1,10 @@
+import React, {useState} from "react"
 
-const SearchBar = () => {
+interface SearchBarProps {
+    onSubmit: () => void
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({onSubmit}) => {
     return(
         <div >
             <input type="text" name="search bar" placeholder="Search Package Repository"

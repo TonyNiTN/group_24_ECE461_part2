@@ -9,5 +9,9 @@ deploy:
 	@echo "Deploying service..."
 	@cd deployments && cdk synth && cdk deploy
 
-# docker build -t gcr.io/group24ece404/bucketfwd:0.1.1 --platform=linux/amd64 -f build/package/Dockerfile.bucketfwd .
-# docker build -t gcr.io/group24ece404/frontend:0.1 --platform=linux/amd64 -f build/package/Dockerfile.frontend .
+copy-frontend:	
+	@gsutil cp -r frontend/my-app/dist/* gs://ece461-dev.tonyni.ca 
+
+docker-go-bp:
+	@docker build -t gcr.io/group-24-ece461/api:0.1 --platform=linux/amd64 -f build/package/Dockerfile.api .
+	@docker push gcr.io/group-24-ece461/api:0.1

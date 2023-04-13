@@ -21,8 +21,8 @@ func RunServer() {
 
 	//create client to interact with google cloud storage
 	const (
-		projectid  = "trusted-package-registry"
-		bucketname = "package-repos"
+		projectid  = "group-24-ece461" 
+		bucketname = "package-repo-ece461-24"
 	)
 
 	client, err := db.NewBucketClient(context.Background(), projectid, bucketname)
