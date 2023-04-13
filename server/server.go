@@ -66,7 +66,6 @@ func RunServer() {
 
 	//Initialize go gin router
 	r := gin.Default()
-	r.LoadHTMLGlob("views/*")
 	r.Use(CORSMiddleware())
 
 	//ROUTES
