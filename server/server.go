@@ -1,3 +1,24 @@
+//go:generate swag init -g main.go -o ./docs
+
+// @title           Swagger Example API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.basic  BasicAuth
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 package server
 
 import (
@@ -16,7 +37,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
-)
+) // gin-swagger middleware
+// swagger embed files
 
 func RunServer() {
 
@@ -44,6 +66,7 @@ func RunServer() {
 
 	//Initialize go gin router
 	r := gin.Default()
+	r.LoadHTMLGlob("views/*")
 	r.Use(CORSMiddleware())
 
 	//ROUTES
@@ -72,6 +95,7 @@ func RunServer() {
 					break
 				}
 				if err != nil {
+					c.JSON(http.StatusInternalServerError, "Error getting documents from the database")
 					log.Fatalf("Failed to iterate Firestore documents: %v", err)
 				}
 
@@ -95,25 +119,8 @@ func RunServer() {
 			}
 		}
 
-		//packages, err := firestoreClient.ListPackages()
-		//if err != nil {
-		//	fmt.Println("error listing all packages in the database!")
-		//}
 		c.JSON(http.StatusOK, packages)
 	})
-
-	//Score package endpoint
-
-	//Get all packages
-	// r.GET("/repos", func(c *gin.Context) {
-	// 	packages, err := client.ListAllPackages()
-	// 	if err != nil {
-	// 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-	// 	fmt.Println(packages)
-	// 	c.JSON(http.StatusOK, packages)
-	// })
 
 	//GET ALL PACKAGES
 	r.GET("/packages", func(c *gin.Context) {
@@ -143,18 +150,18 @@ func RunServer() {
 
 		err = firestoreClient.UploadPackage(context.Background(), firestoreClient.GetClient(), packageData, id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, "error uploading package")
 		}
 
 		file, header, err := c.Request.FormFile("file")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, "error getting file from form")
 			return
 		}
 		defer file.Close()
 
 		if err := client.UploadFile(header.Filename, file, id); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, "error uploading file")
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "package uploaded"})
@@ -182,7 +189,7 @@ func RunServer() {
 			return
 		}
 		firestoreClient.ScorePackage(context.Background(), firestoreClient.GetClient(), packageInfo.URL, packageInfo)
-		c.JSON(http.StatusOK, "Success!")
+		c.JSON(http.StatusOK, packageInfo)
 	})
 
 	r.GET("/packages/search", func(c *gin.Context) {
@@ -199,7 +206,7 @@ func RunServer() {
 		c.JSON(http.StatusOK, searchResults)
 	})
 
-	r.GET("/package/:id/download", func(c *gin.Context) {
+	r.GET("/packages/:id/download", func(c *gin.Context) {
 		packageID := c.Param("id")
 		packageInfo, err := firestoreClient.GetPackage(context.Background(), firestoreClient.GetClient(), packageID)
 		if err != nil {
@@ -221,7 +228,7 @@ func RunServer() {
 		c.JSON(http.StatusOK, "Download successful")
 	})
 
-	r.DELETE("/package/:id", func(c *gin.Context) {
+	r.DELETE("/packages/:id/delete", func(c *gin.Context) {
 		packageName := c.Param("id")
 		if err := firestoreClient.DeletePackage(context.Background(), firestoreClient.GetClient(), packageName); err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -229,22 +236,6 @@ func RunServer() {
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "package deleted"})
 	})
-
-	// r.POST("/upload", func(c *gin.Context) {
-	// 	fmt.Println("Hit upload a package")
-	// 	file, header, err := c.Request.FormFile("file")
-	// 	if err != nil {
-	// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-	// 	defer file.Close()
-
-	// 	if err := client.UploadFile(header.Filename, file, firestoreClient.GetCollection().ID); err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-	// 	c.JSON(http.StatusOK, gin.H{"message": "package uploaded"})
-	// })
 
 	port := os.Getenv("PORT")
 	if port == "" {
