@@ -72,8 +72,13 @@ func (db *Table) UploadPackage(ctx context.Context, client *firestore.Client, pa
 
 func (db *Table) SearchPackage(ctx context.Context, client *firestore.Client, name string) ([]*Package, error) {
 	var packages []*Package
+	var query firestore.Query
 	collection := client.Collection("packages")
-	query := collection.Where("name", ">=", name).Where("name", "<=", name+"\uf8ff")
+	if name == "" {
+		query = collection.OrderBy("net score", firestore.Desc)
+	} else {
+		query = collection.Where("name", ">=", name).Where("name", "<=", name+"\uf8ff")
+	}
 
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {

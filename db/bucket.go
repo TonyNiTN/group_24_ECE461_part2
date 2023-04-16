@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 
 	"cloud.google.com/go/storage"
@@ -119,10 +120,10 @@ func (db *DB) SearchFile(packageID string) (string, error) {
 	return "", fmt.Errorf("file not found in the bucket!")
 }
 
-func (db *DB) DownloadFile(packageID string, w io.Writer) error {
+func (db *DB) DownloadFile(packageID string, w http.ResponseWriter, r *http.Request) error {
 	filename, err := db.SearchFile(packageID)
 	if err != nil {
-		fmt.Errorf("error searching for the file in the bucket!")
+		return err
 	}
 
 	obj := db.bucket.Object(filename)
@@ -132,8 +133,8 @@ func (db *DB) DownloadFile(packageID string, w io.Writer) error {
 	}
 	defer rc.Close()
 
-	_, err = io.Copy(w, rc)
-	if err != nil {
+	// copy the file content from the object reader to the response writer in chunks
+	if _, err := io.Copy(w, rc); err != nil {
 		return err
 	}
 

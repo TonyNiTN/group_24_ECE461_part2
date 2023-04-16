@@ -66,6 +66,7 @@ func RunServer() {
 
 	//Initialize go gin router
 	r := gin.Default()
+	//r.LoadHTMLGlob("views/*")
 	r.Use(CORSMiddleware())
 
 	//ROUTES
@@ -117,6 +118,12 @@ func RunServer() {
 				break
 			}
 		}
+
+		// c.HTML(http.StatusOK, "index.html", gin.H{
+		// 	"packages":  packages,
+		// 	"pageSize":  pageSize,
+		// 	"pageToken": pageToken,
+		// })
 
 		c.JSON(http.StatusOK, packages)
 	})
@@ -211,15 +218,22 @@ func RunServer() {
 		if err != nil {
 			logger.DebugMsg("error getting package info in Gin package download handler")
 		}
-		f, err := os.Create(packageInfo.Name + ".zip")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		defer f.Close()
 
-		// download file from GCP and save to local file
-		if err := client.DownloadFile(packageID, f); err != nil {
+		// fileBytes, err := client.DownloadFile(packageID)
+		// if err != nil {
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// 	return
+		// }
+		w := c.Writer
+		r := c.Request
+
+		// set the response headers to indicate a zip file
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", "attachment; filename="+packageInfo.Name+".zip")
+
+		// call the DownloadFile function to write the file content to the response body
+		err = client.DownloadFile(packageID, w, r)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
