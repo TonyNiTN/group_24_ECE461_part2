@@ -1,24 +1,3 @@
-//go:generate swag init -g main.go -o ./docs
-
-// @title           Swagger Example API
-// @version         1.0
-// @description     This is a sample server celler server.
-// @termsOfService  http://swagger.io/terms/
-
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
-
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host      localhost:8080
-// @BasePath  /api/v1
-
-// @securityDefinitions.basic  BasicAuth
-
-// @externalDocs.description  OpenAPI
-// @externalDocs.url          https://swagger.io/resources/open-api/
 package server
 
 import (
@@ -62,11 +41,11 @@ func RunServer() {
 	}
 	defer firestoreClient.Close()
 
-	gin.SetMode(gin.ReleaseMode)
+	//gin.SetMode(gin.ReleaseMode)
 
 	//Initialize go gin router
 	r := gin.Default()
-	//r.LoadHTMLGlob("views/*")
+	r.LoadHTMLGlob("views/*")
 	r.Use(CORSMiddleware())
 
 	//ROUTES
@@ -113,19 +92,27 @@ func RunServer() {
 
 			// Check if there are more pages
 			if len(packages) >= pageSize {
-				pageToken = packages[len(packages)-1].ID
+				doc, err := iter.Next()
+				if err == iterator.Done {
+					break
+				} else if err != nil {
+					c.JSON(http.StatusInternalServerError, "Error getting documents from the database")
+					log.Fatalf("Failed to iterate Firestore documents: %v", err)
+				} else {
+					pageToken = doc.Ref.ID
+				}
 			} else {
 				break
 			}
 		}
 
-		// c.HTML(http.StatusOK, "index.html", gin.H{
-		// 	"packages":  packages,
-		// 	"pageSize":  pageSize,
-		// 	"pageToken": pageToken,
-		// })
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"packages":  packages,
+			"pageSize":  pageSize,
+			"pageToken": pageToken,
+		})
 
-		c.JSON(http.StatusOK, packages)
+		//c.JSON(http.StatusOK, packages)
 	})
 
 	//GET ALL PACKAGES
