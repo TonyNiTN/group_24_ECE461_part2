@@ -45,7 +45,7 @@ func RunServer() {
 
 	//Initialize go gin router
 	r := gin.Default()
-	r.LoadHTMLGlob("views/*")
+	//r.LoadHTMLGlob("views/*")
 	r.Use(CORSMiddleware())
 
 	//ROUTES
@@ -106,13 +106,13 @@ func RunServer() {
 			}
 		}
 
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"packages":  packages,
-			"pageSize":  pageSize,
-			"pageToken": pageToken,
-		})
+		// c.HTML(http.StatusOK, "index.html", gin.H{
+		// 	"packages":  packages,
+		// 	"pageSize":  pageSize,
+		// 	"pageToken": pageToken,
+		// })
 
-		//c.JSON(http.StatusOK, packages)
+		c.JSON(http.StatusOK, packages)
 	})
 
 	//GET ALL PACKAGES
