@@ -187,10 +187,10 @@ func RunServer() {
 
 	r.GET("/packages/search", func(c *gin.Context) {
 		packageName := c.Query("name")
-		if packageName == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "name query parameter is missing"})
-			return
-		}
+		// if packageName == "" {
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "name query parameter is missing"})
+		// 	return
+		// }
 		searchResults, err := firestoreClient.SearchPackage(context.Background(), firestoreClient.GetClient(), packageName)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
