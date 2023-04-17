@@ -22,9 +22,10 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
     setIsFileSelected(false);
   };
 
-  const submitHandler = () => {
+  const submitHandler = (event: any) => {
+    event?.preventDefault
     const formData = new FormData();
-
+    
     formData.append('name', packageName);
     formData.append('url', packageURL);
     formData.append('file', selectedFile);
@@ -64,15 +65,15 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
           <h2 className="text-2xl font-bold mb-4">Upload Package</h2>
           <form onSubmit={submitHandler} className="">
             <div className="flex flex-col space-y-4">
-              <label className="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm cursor-pointer py-3 px-4">
-                <span className="block font-medium">Select a file</span>
+              <label className="block w-full border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm cursor-pointer py-3 px-4">
+                <span className="block font-medium text-purple-500">Select a file</span>
                 <input type="file" className="hidden" onChange={changeHandler} name="file" required />
               </label>
 
               <input
                 type="text"
                 name="name"
-                className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full py-2 px-3 border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="Package Name"
                 required
                 value={packageName}
@@ -82,22 +83,22 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
               <input
                 type="text"
                 name="url"
-                className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full py-2 px-3 border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="Package URL"
                 required
                 value={packageURL}
                 onChange={e => setPackageURL(e.target.value)}
               />
 
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-400">
                 {isFileSelected ? `Selected file: ${selectedFile.name}` : 'No file selected'}
               </p>
-              <p className="text-sm text-gray-600">{isFileSelected ? `File type: ${selectedFile.type}` : ''}</p>
-              <p className="text-sm text-gray-600">{isFileSelected ? `File size: ${selectedFile.size} bytes` : ''}</p>
+              <p className="text-sm text-gray-400">{isFileSelected ? `File type: ${selectedFile.type}` : ''}</p>
+              <p className="text-sm text-gray-400">{isFileSelected ? `File size: ${selectedFile.size} bytes` : ''}</p>
             </div>
             {fileUpload ? <></> : <p className="text-sm text-purple-700 py-3">{statusMessage}</p>}
             <button
-              className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 mt-3 rounded"
+              className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 mt-3 rounded shadow-sm"
               onSubmit={submitHandler}
             >
               Upload
