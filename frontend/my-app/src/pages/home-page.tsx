@@ -48,8 +48,7 @@ const HomePage = () => {
           console.error('Error:', error);
         });
     }, 500);
-  }, []);
-  //packageState, packageSearch
+  }, [packageState, packageSearch]);
   const packageList = packages ? (
     packages.map(p => <TableElement displayPackage={p} onChange={taskChange} key={p.ID} />)
   ) : (
