@@ -23,7 +23,7 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
   };
 
   const submitHandler = (event: any) => {
-    event?.preventDefault
+    event.preventDefault()
     const formData = new FormData();
     
     formData.append('name', packageName);
@@ -99,6 +99,7 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
             {fileUpload ? <></> : <p className="text-sm text-purple-700 py-3">{statusMessage}</p>}
             <button
               className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 mt-3 rounded shadow-sm"
+              type='submit'
               onSubmit={submitHandler}
             >
               Upload

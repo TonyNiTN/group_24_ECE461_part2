@@ -10,7 +10,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const changeToSignUp = () => {
-    navigate('../signup');
+    navigate('../login');
   };
 
   const handleUsernameChange = (event: any) => {
@@ -39,7 +39,7 @@ const LoginPage = () => {
     formData.append('username', username);
     formData.append('password', password);
 
-    fetch(SERVICE + '/login', {
+    fetch(SERVICE + '/signup', {
       method: 'POST',
       body: formData,
     })
@@ -51,7 +51,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h1 className="text-center text-4xl font-extrabold text-purple-600 mb-8">Login</h1>
+        <h1 className="text-center text-4xl font-extrabold text-purple-600 mb-8">Sign Up</h1>
         <div className="mt-6">
           <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md">
             <div className="mb-4">
@@ -89,12 +89,12 @@ const LoginPage = () => {
               type="submit"
               onClick={handleSubmit}
             >
-              Login
+              Sign Up
             </button>
             <div className="flex justify-center mt-4">
-              <p className="text-gray-600">Don't have an account?</p>
+              <p className="text-gray-600">Already have an account?</p>
               <a className="text-purple-600 ml-2 font-bold hover:underline" onClick={changeToSignUp}>
-                Sign up
+                Login
               </a>
             </div>
           </form>
