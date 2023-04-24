@@ -6,9 +6,9 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
 
 	"cloud.google.com/go/storage"
+	"github.com/19chonm/461_1_23/logger"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -25,7 +25,12 @@ type PackageSource struct {
 }
 
 func NewBucketClient(ctx context.Context, projectID, bucketName string) (*DB, error) {
-	creds := option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	credentials, err := ReadCredentialsFromGCS(ctx, "proj-env", "keys.json")
+	if err != nil {
+		logger.DebugMsg("error reading credentials from the proj-env bucket")
+	}
+
+	creds := option.WithCredentialsJSON(credentials)
 	client, err := storage.NewClient(ctx, creds)
 	if err != nil {
 		return nil, err
