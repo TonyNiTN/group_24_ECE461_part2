@@ -371,8 +371,12 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Initialize the Firebase app
-		saPath := filepath.Join(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-		opt := option.WithCredentialsFile(saPath)
+		credentials, err := db.ReadCredentialsFromGCS(context.Background(), "proj-env", "keys.json")
+		if err != nil {
+			logger.DebugMsg("error reading credentials from the proj-env bucket")
+		}
+
+		opt := option.WithCredentialsJSON(credentials)
 		app, err := firebase.NewApp(context.Background(), nil, opt)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase app"})

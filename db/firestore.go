@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/19chonm/461_1_23/logger"
@@ -19,7 +18,12 @@ type Table struct {
 }
 
 func NewFirestoreClient(ctx context.Context, projectID, tableName string) (*Table, error) {
-	creds := option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	credentials, err := ReadCredentialsFromGCS(ctx, "proj-env", "keys.json")
+	if err != nil {
+		logger.DebugMsg("error reading credentials from the proj-env bucket")
+	}
+
+	creds := option.WithCredentialsJSON(credentials)
 	client, err := firestore.NewClient(ctx, "trusted-package-registry", creds)
 	if err != nil {
 		return nil, err
