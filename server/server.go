@@ -8,10 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"cloud.google.com/go/firestore"
+	firebase "firebase.google.com/go"
 	"github.com/19chonm/461_1_23/db"
 	"github.com/19chonm/461_1_23/logger"
 	"github.com/gin-gonic/gin"
@@ -19,8 +21,7 @@ import (
 	"google.golang.org/api/identitytoolkit/v3"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-) // gin-swagger middleware
-// swagger embed files
+)
 
 func RunServer() {
 
@@ -179,11 +180,6 @@ func RunServer() {
 				logger.DebugMsg("error getting package info in Gin package download handler")
 			}
 
-			// fileBytes, err := client.DownloadFile(packageID)
-			// if err != nil {
-			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			// 	return
-			// }
 			w := c.Writer
 			r := c.Request
 
@@ -194,6 +190,7 @@ func RunServer() {
 			// call the DownloadFile function to write the file content to the response body
 			err = client.DownloadFile(packageID, w, r)
 			if err != nil {
+				logger.DebugMsg("error downloading file")
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
@@ -202,10 +199,6 @@ func RunServer() {
 		})
 		authRoutes.GET("/packages/search", func(c *gin.Context) {
 			packageName := c.Query("name")
-			// if packageName == "" {
-			// 	c.JSON(http.StatusBadRequest, gin.H{"error": "name query parameter is missing"})
-			// 	return
-			// }
 			searchResults, err := firestoreClient.SearchPackage(context.Background(), firestoreClient.GetClient(), packageName)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -299,33 +292,6 @@ func RunServer() {
 		c.JSON(http.StatusOK, gin.H{"token": registerResp.IdToken})
 	})
 
-	// r.GET("/")
-
-	//GET ALL PACKAGES
-	// r.GET("/packages", func(c *gin.Context) {
-	// 	packages, err := firestoreClient.ListPackages()
-	// 	if err != nil {
-	// 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-	// 		return
-	// 	}
-	// 	c.JSON(http.StatusOK, packages)
-	// })
-
-	//UPLOAD NEW PACKAGE
-	// r.POST("/packages/upload")
-
-	// // GET A PACKAGE
-	// r.GET("/packages/:id")
-
-	// // SCORE A PACKAGE
-	// r.GET("/packages/:id/score")
-
-	// r.GET("/packages/search")
-
-	// r.GET("/packages/:id/download")
-
-	// r.DELETE("/packages/:id/delete")
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -397,21 +363,33 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Initialize the Identity Toolkit client
-		saPath := filepath.Join(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-		opt := option.WithCredentialsFile(saPath)
-		idtClient, err := identitytoolkit.NewService(context.Background(), opt)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Identity Toolkit client"})
+		token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "ID token is required"})
 			c.Abort()
 			return
 		}
 
-		// Verify the ID token IdentitytoolkitRelyingpartyVerifyIdTokenRequest
-		verifyReq := &identitytoolkit.IdentitytoolkitRelyingpartyVerifyCustomTokenRequest{
-			Token: authHeader,
+		// Initialize the Firebase app
+		saPath := filepath.Join(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+		opt := option.WithCredentialsFile(saPath)
+		app, err := firebase.NewApp(context.Background(), nil, opt)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase app"})
+			c.Abort()
+			return
 		}
-		_, err = idtClient.Relyingparty.VerifyCustomToken(verifyReq).Do()
+
+		// Get the Firebase Auth client
+		authClient, err := app.Auth(context.Background())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase Auth client"})
+			c.Abort()
+			return
+		}
+
+		// Verify the ID token
+		_, err = authClient.VerifyIDToken(context.Background(), token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid ID token"})
 			c.Abort()
