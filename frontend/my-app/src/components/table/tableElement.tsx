@@ -1,6 +1,8 @@
 import React, {useState} from 'react';
 import {Package} from '../../imports';
 import {SERVICE} from '../../imports';
+import {getJWT} from '../../utils/token';
+import { useNavigate } from 'react-router-dom';
 
 interface TableElementProps {
   onChange: () => void;
@@ -9,16 +11,27 @@ interface TableElementProps {
 
 const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) => {
   const [showScore, setShowScore] = useState(false);
+  const navigate = useNavigate()
   const packageId = displayPackage.ID;
 
   const handleDownloadPackage = () => {
+    const token = getJWT();
+
     fetch(`${SERVICE}/packages/${packageId}/download`, {
       method: 'GET',
       headers: {
+        Authorization: 'Bearer ' + token,
         'Content-Type': 'application/octet-stream', // or the appropriate MIME type for your file
       },
     })
-      .then(response => response.blob())
+      .then(response => {
+        if(response.status === 401 || response.status === 403) {
+          navigate("/");
+        } else if (response.status !== 200) {
+          throw new Error('Can not download pacakage. Status code: ' + response.status);
+        } 
+        return response.blob()
+      })
       .then(blob => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -35,13 +48,20 @@ const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) =
 
   const handleDeletePackage = () => {
     onChange();
+    const token = getJWT();
     fetch(`${SERVICE}/packages/${packageId}/delete`, {
       method: 'DELETE',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      },
       body: null,
     })
       .then(response => {
+        if (response.status === 401 || response.status === 403) {
+          navigate('/');
+        }
         console.log(response);
-        response.json();
+        return response.json();
       })
       .then(result => {
         console.log('Success:', result);
@@ -53,11 +73,20 @@ const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) =
 
   const handleScorePackage = () => {
     onChange();
+    const token = getJWT();
     fetch(`${SERVICE}/packages/${packageId}/score`, {
       method: 'GET',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      },
       body: null,
     })
-      .then(response => response.json())
+      .then(response => {
+        if (response.status === 401 || response.status === 403) {
+          navigate('/');
+        }
+        return response.json()
+      })
       .then(result => {
         console.log('Success:', result);
       })

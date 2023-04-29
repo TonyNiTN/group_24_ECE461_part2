@@ -1,43 +1,65 @@
 import React, {useState, useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 import UploadModal from '../components/modals/upload';
 import SearchBar from '../components/search/searchbar';
 import {Package} from '../imports';
 import TableElement from '../components/table/tableElement';
 import {SERVICE} from '../imports';
+import { getJWT } from '../utils/token';
+import DeleteModal from '../components/modals/delete';
+
 
 const HomePage = () => {
   const [isUploadModalOpen, setisUploadModalOpen] = useState(false);
+  const [isDeleteModalOpen, setisDeleteModalOpen] = useState(false)
   const [packages, setPackages] = useState<Package[]>([]);
   const [packageState, setPackageState] = useState(false);
   const [loadingPackage, setLoadingPackages] = useState(false);
   const [packageSearch, setPackageSearch] = useState('');
+  const navigate = useNavigate();
 
-  const handleOpenModal = () => {
+  const handleOpenUploadModal = () => {
     setisUploadModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseUploadModal = () => {
     setisUploadModalOpen(false);
   };
+
+   const handleOpenDeleteModal = () => {
+     setisDeleteModalOpen(true);
+   };
+
+   const handleCloseDeleteModal = () => {
+     setisDeleteModalOpen(false);
+   };
 
   const handleSubmitSearchBar = (e: any) => {
     e.preventDefault();
     console.log(packageSearch);
   };
 
-  const taskChange = () => {
+  const packageChange = () => {
     setPackageState(!packageState);
   };
 
   useEffect(() => {
     setLoadingPackages(true);
     const timeOutId = setTimeout(() => {
-      // List Task method
+      const token = getJWT()
       fetch(`${SERVICE}/packages/search?name=${packageSearch}`, {
         method: 'GET',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
       })
-        .then(response => response.json())
+        .then(response => {
+          if (response.status === 401 || response.status === 403) {
+            navigate('/');
+          }
+          return response.json()
+        })
         .then(result => {
           console.log('Success:', result);
           setLoadingPackages(false);
@@ -48,25 +70,32 @@ const HomePage = () => {
           console.error('Error:', error);
         });
     }, 500);
+    return () => clearTimeout(timeOutId);
   }, [packageState, packageSearch]);
   const packageList = packages ? (
-    packages.map(p => <TableElement displayPackage={p} onChange={taskChange} key={p.ID} />)
+    packages.map(p => <TableElement displayPackage={p} onChange={packageChange} key={p.ID} />)
   ) : (
     <></>
   );
 
   return (
     <div>
-      <p className="text-2xl font-bold text-purple-600 ml-4 mt-4">Package Repository</p>
+      <div className="flex flex-ro ml-4 mt-4 items-center">
+        <p className="text-2xl font-bold text-purple-600 pr-8">Package Repository</p>
+        <button className="bg-gray-300 text-gray-50 p-2 rounded-lg shadow-sm" onClick={handleOpenDeleteModal}>
+          Reset Repo
+        </button>
+      </div>
       <div className="flex flex-row space-x-4 m-4">
         <SearchBar onSubmit={handleSubmitSearchBar} searchInput={packageSearch} setSearchInput={setPackageSearch} />
         <button
           className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 mt-3 rounded-lg shadow-sm"
-          onClick={handleOpenModal}
+          onClick={handleOpenUploadModal}
         >
           Upload Package
         </button>
-        {isUploadModalOpen && <UploadModal onClose={handleCloseModal} />}
+        {isUploadModalOpen && <UploadModal onClose={handleCloseUploadModal} onChange={packageChange} />}
+        {isDeleteModalOpen && <DeleteModal onClose={handleCloseDeleteModal} onChange={packageChange} />}
       </div>
 
       <div className="rounded-xl shadow-lg m-4">

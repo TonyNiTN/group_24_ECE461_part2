@@ -1,16 +1,22 @@
 import React, {useState} from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { getJWT } from '../../utils/token';
+import { SERVICE } from '../../imports';
 
 interface ModalProps {
   onClose: () => void;
+  onChange: () => void;
 }
 
-const UploadModal: React.FC<ModalProps> = ({onClose}) => {
+const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
   const [selectedFile, setSelectedFile] = useState<File>(new File([''], ''));
   const [isFileSelected, setIsFileSelected] = useState(false);
   const [packageName, setPackageName] = useState('');
   const [packageURL, setPackageURL] = useState('');
   const [fileUpload, setFileUpload] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const navigate = useNavigate();
 
   const changeHandler = (event: any) => {
     event.preventDefault();
@@ -22,19 +28,28 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
     setIsFileSelected(false);
   };
 
-  const submitHandler = (event: any) => {
-    event.preventDefault()
+  const submitHandler = () => {
+    onChange();
+    const token = getJWT();
     const formData = new FormData();
     
     formData.append('name', packageName);
     formData.append('url', packageURL);
     formData.append('file', selectedFile);
 
-    fetch('https://team24-f6kqjvqzqa-uc.a.run.app/packages/upload', {
+    fetch(`${SERVICE}/packages/upload`, {
       method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      },
       body: formData,
     })
-      .then(response => response.json())
+      .then(response => {
+        if (response.status === 401 || response.status === 403) {
+          navigate('/');
+        }
+        return response.json();
+      })
       .then(result => {
         console.log('Success:', result);
         setStatusMessage('File uploaded successfully!');
@@ -67,7 +82,7 @@ const UploadModal: React.FC<ModalProps> = ({onClose}) => {
             <div className="flex flex-col space-y-4">
               <label className="block w-full border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm cursor-pointer py-3 px-4">
                 <span className="block font-medium text-purple-500">Select a file</span>
-                <input type="file" className="hidden" onChange={changeHandler} name="file" required />
+                <input type="file" className="hidden" onChange={changeHandler} name="file" accept="application/zip" required />
               </label>
 
               <input

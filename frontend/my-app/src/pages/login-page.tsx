@@ -2,15 +2,17 @@ import React, {useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {SERVICE} from '../imports';
+import { setJWT } from '../utils/token';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loginStatus, setLoginStatus] = useState(false);
+  const [loginSuc, setLoginSuc] = useState(false);
+  const [loginFail, setLoginFail] = useState(false);
   const navigate = useNavigate();
 
   const changeToSignUp = () => {
-    navigate('../signup');
+    navigate('/signup');
   };
 
   const handleUsernameChange = (event: any) => {
@@ -34,18 +36,36 @@ const LoginPage = () => {
       return;
     }
 
-    const formData = new FormData();
-
-    formData.append('username', username);
-    formData.append('password', password);
+    const data = {email: username, password: password, returnSecureToken: true};
 
     fetch(SERVICE + '/login', {
       method: 'POST',
-      body: formData,
+      body: JSON.stringify(data),
     })
-      .then(response => response.json())
-      .then()
-      .catch();
+      .then(response => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          throw new Error('Login unsuccessful. Try Again');
+        }
+      })
+      .then(response => {
+        setJWT(response.token);
+        setLoginSuc(true);
+         const timeOutId = setTimeout(() => {
+           setLoginSuc(false);
+           navigate('/home');
+         }, 1000);
+         return () => clearTimeout(timeOutId);
+      })
+      .catch(err => {
+        console.log(err);
+        setLoginFail(true);
+        const timeOutId = setTimeout(() => {
+          setLoginFail(false);
+        }, 1000);
+        return () => clearTimeout(timeOutId);
+      });
   };
 
   return (
@@ -84,6 +104,9 @@ const LoginPage = () => {
                 required
               />
             </div>
+            {loginSuc ? <p className="text-green-500 pb-4">Login success!</p> : null}
+
+            {loginFail ? <p className="text-red-500 pb-4">Login fail. Please try again.</p> : null}
             <button
               className="block w-full py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               type="submit"

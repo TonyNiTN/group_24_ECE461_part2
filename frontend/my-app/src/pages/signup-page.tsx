@@ -6,11 +6,12 @@ import {SERVICE} from '../imports';
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loginStatus, setLoginStatus] = useState(false);
+  const [signupSuc, setSignupSuc] = useState(false);
+  const [signupFail, setSignupFail] = useState(false);
   const navigate = useNavigate();
 
   const changeToSignUp = () => {
-    navigate('../login');
+    navigate('/login');
   };
 
   const handleUsernameChange = (event: any) => {
@@ -34,18 +35,32 @@ const LoginPage = () => {
       return;
     }
 
-    const formData = new FormData();
+    const data = {email: username, password: password};
 
-    formData.append('username', username);
-    formData.append('password', password);
-
-    fetch(SERVICE + '/signup', {
+    fetch(SERVICE + '/register', {
       method: 'POST',
-      body: formData,
+      body: JSON.stringify(data),
     })
-      .then(response => response.json())
-      .then()
-      .catch();
+      .then(response => {
+        if (response.status === 200) {
+          setSignupSuc(true)
+          const timeOutId = setTimeout(() => {
+            setSignupSuc(false);
+            navigate('/login');
+          }, 1000);
+          return () => clearTimeout(timeOutId);
+        } else {
+          throw new Error('Sign up unsuccessful. Try Again');
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        setSignupFail(true);
+        const timeOutId = setTimeout(() => {
+          setSignupFail(false);
+        }, 1000);
+        return () => clearTimeout(timeOutId);
+      });
   };
 
   return (
@@ -84,6 +99,9 @@ const LoginPage = () => {
                 required
               />
             </div>
+            {signupSuc ? <p className="text-green-500 pb-4">Registed! Please login in.</p> : null}
+
+            {signupFail ? <p className="text-red-500 pb-4">Register fail. Please Try again.</p> : null}
             <button
               className="block w-full py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               type="submit"
