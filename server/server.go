@@ -214,6 +214,15 @@ func RunServer() {
 			}
 			c.JSON(http.StatusOK, gin.H{"message": "package deleted"})
 		})
+
+		authRoutes.DELETE("/reset", func(c *gin.Context) {
+			if err := firestoreClient.ResetTable(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reset database"})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"messsage": "database successfully reset"})
+		})
 	}
 
 	//LOGIN A USER
@@ -282,14 +291,14 @@ func RunServer() {
 			Password: req.Password,
 		}
 
-		registerResp, err := idtClient.Relyingparty.SignupNewUser(registerReq).Do()
+		_, err = idtClient.Relyingparty.SignupNewUser(registerReq).Do()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to register user"})
 			return
 		}
 
 		// Return the ID token
-		c.JSON(http.StatusOK, gin.H{"token": registerResp.IdToken})
+		c.JSON(http.StatusOK, "user registered successfully")
 	})
 
 	port := os.Getenv("PORT")

@@ -196,6 +196,28 @@ func (db *Table) ListPackages() ([]*Package, error) {
 	return packages, nil
 }
 
+func (db *Table) ResetTable() error {
+	iter := db.client.Collection("packages").Documents(db.ctx)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			logger.DebugMsg("error getting next object in the database")
+			return err
+		}
+
+		_, err = db.client.Collection("packages").Doc(doc.Ref.ID).Delete(db.ctx)
+		if err != nil {
+			logger.DebugMsg("error deleting pbject from database")
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (db *Table) Close() error {
 	return db.client.Close()
 }
