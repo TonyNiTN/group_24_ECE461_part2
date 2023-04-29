@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"cloud.google.com/go/firestore"
@@ -217,6 +218,15 @@ func (db *Table) ResetTable() error {
 		}
 	}
 
+	clearCacheFile("cache")
+	return nil
+}
+
+func clearCacheFile(filename string) error {
+	err := os.Remove(filename)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -17,13 +17,13 @@ func ComputeNetScore(fs []Factor) float64 {
 	var sum float64
 
 	for _, f := range fs {
-		if f.AllOrNothing {
-			if f.Value == 0 {
-				return 0
-			} else {
-				continue
-			}
-		}
+		// if f.AllOrNothing {
+		// 	if f.Value == 0 {
+		// 		return 0
+		// 	} else {
+		// 		continue
+		// 	}
+		// }
 
 		sum += f.Value * f.Weight
 	}
