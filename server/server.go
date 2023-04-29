@@ -129,9 +129,10 @@ func RunServer() {
 
 			id := uuid.New().String()
 			packageData := &db.Package{
-				ID:   id,
-				Name: name,
-				URL:  url,
+				ID:            id,
+				Name:          name,
+				LowercaseName: strings.ToLower(name),
+				URL:           url,
 			}
 
 			err = firestoreClient.UploadPackage(context.Background(), firestoreClient.GetClient(), packageData, id)
@@ -204,7 +205,12 @@ func RunServer() {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			c.JSON(http.StatusOK, searchResults)
+			if searchResults == nil {
+				c.JSON(http.StatusOK, gin.H{"message": "Can not find the package you are looking for in the database"})
+			} else {
+				c.JSON(http.StatusOK, searchResults)
+			}
+
 		})
 		authRoutes.DELETE("/packages/:id/delete", func(c *gin.Context) {
 			packageName := c.Param("id")

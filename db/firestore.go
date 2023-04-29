@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"github.com/19chonm/461_1_23/logger"
@@ -78,10 +79,11 @@ func (db *Table) SearchPackage(ctx context.Context, client *firestore.Client, na
 	var packages []*Package
 	var query firestore.Query
 	collection := client.Collection("packages")
+	name = strings.ToLower(name)
 	if name == "" {
 		query = collection.OrderBy("net score", firestore.Desc)
 	} else {
-		query = collection.Where("name", ">=", name).Where("name", "<=", name+"\uf8ff")
+		query = collection.Where("lowercase name", ">=", name).Where("lowercase name", "<=", name+"\uf8ff")
 	}
 
 	docs, err := query.Documents(ctx).GetAll()

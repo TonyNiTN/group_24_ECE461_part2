@@ -10,6 +10,7 @@ type Package struct {
 	ID                  string `firestore:"id"`
 	URL                 string `firestore:"url"`
 	Name                string `firestore:"name"`
+	LowercaseName       string `firestore:"lowercase name"`
 	NetScore            string `firestore:"net score"`
 	LicenseScore        string `firestore:"license score"`
 	CorrectnessScore    string `firestore:"correctness score"`
