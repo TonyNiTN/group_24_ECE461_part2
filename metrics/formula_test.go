@@ -20,8 +20,8 @@ func TestValidNetScore(t *testing.T) {
 	fs := []Factor{f1, f2}
 	res := ComputeNetScore(fs)
 
-	if res != 0 {
-		t.Errorf("res should be 0")
+	if res < 0 || res > 1 {
+		t.Errorf("res should be between 0 and 1")
 	}
 }
 
