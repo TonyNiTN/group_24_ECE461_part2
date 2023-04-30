@@ -12,14 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/19chonm/461_1_23/db"
 	"github.com/19chonm/461_1_23/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"google.golang.org/api/identitytoolkit/v3"
-	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -45,7 +43,7 @@ func RunServer() {
 	}
 	defer firestoreClient.Close()
 
-	//gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 
 	//Initialize go gin router
 	r := gin.Default()
@@ -54,72 +52,7 @@ func RunServer() {
 	authRoutes := r.Group("/")
 	authRoutes.Use(AuthMiddleware())
 	{
-		authRoutes.GET("/", func(c *gin.Context) {
-			pageSize := 10
-			pageToken := ""
-
-			// Create a slice to hold the packages
-			packages := make([]*db.Package, 0)
-
-			// Fetch the packages from Firestore
-			for {
-				// Create a query to get the next page of packages
-				q := firestoreClient.GetClient().Collection("packages").OrderBy("name", firestore.Asc)
-				if pageToken != "" {
-					q = q.StartAfter(pageToken)
-				}
-				q = q.Limit(pageSize)
-
-				// Execute the query
-				iter := q.Documents(firestoreClient.GetCtx())
-				for {
-					// Get the next document
-					doc, err := iter.Next()
-					if err == iterator.Done {
-						break
-					}
-					if err != nil {
-						c.JSON(http.StatusInternalServerError, "Error getting documents from the database")
-						log.Fatalf("Failed to iterate Firestore documents: %v", err)
-					}
-
-					// Unmarshal the document into a Package struct
-					var p *db.Package
-					err = doc.DataTo(&p)
-					if err != nil {
-						log.Fatalf("Failed to unmarshal Firestore document: %v", err)
-					}
-					p.ID = doc.Ref.ID
-
-					// Add the package to the slice
-					packages = append(packages, p)
-				}
-
-				// Check if there are more pages
-				if len(packages) >= pageSize {
-					doc, err := iter.Next()
-					if err == iterator.Done {
-						break
-					} else if err != nil {
-						c.JSON(http.StatusInternalServerError, "Error getting documents from the database")
-						log.Fatalf("Failed to iterate Firestore documents: %v", err)
-					} else {
-						pageToken = doc.Ref.ID
-					}
-				} else {
-					break
-				}
-			}
-
-			// c.HTML(http.StatusOK, "index.html", gin.H{
-			// 	"packages":  packages,
-			// 	"pageSize":  pageSize,
-			// 	"pageToken": pageToken,
-			// })
-
-			c.JSON(http.StatusOK, packages)
-		})
-		authRoutes.POST("/packages/upload", func(c *gin.Context) {
+		authRoutes.POST("/package", func(c *gin.Context) {
 			if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			}
@@ -154,7 +87,7 @@ func RunServer() {
 			c.JSON(http.StatusOK, gin.H{"message": "package uploaded"})
 
 		})
-		authRoutes.GET("/packages/:id", func(c *gin.Context) {
+		authRoutes.GET("/package/:id", func(c *gin.Context) {
 			packageID := c.Param("id")
 			packageInfo, err := firestoreClient.GetPackage(context.Background(), firestoreClient.GetClient(), packageID)
 			if err != nil {
@@ -164,7 +97,43 @@ func RunServer() {
 
 			c.JSON(http.StatusOK, packageInfo)
 		})
-		authRoutes.GET("/packages/:id/score", func(c *gin.Context) {
+
+		// UPDATE PACKAGE
+		authRoutes.PUT("/package/:id", func(c *gin.Context) {
+			if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			}
+
+			packageID := c.Param("id")
+			packageName := c.Request.FormValue("name")
+			packageURL := c.Request.FormValue("url")
+			packageData := &db.Package{
+				ID:            packageID,
+				Name:          packageName,
+				LowercaseName: strings.ToLower(packageName),
+				URL:           packageURL,
+			}
+
+			err := firestoreClient.UpdatePackage(context.Background(), firestoreClient.GetClient(), packageData, packageID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
+
+			file, header, err := c.Request.FormFile("file")
+			if err != nil {
+				c.JSON(http.StatusBadRequest, "error getting file from form")
+				return
+			}
+			defer file.Close()
+
+			if err := client.UploadFile(header.Filename, file, packageID); err != nil {
+				c.JSON(http.StatusInternalServerError, "error uploading file")
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "package updated"})
+		})
+
+		authRoutes.GET("/package/:id/rate", func(c *gin.Context) {
 			packageID := c.Param("id")
 			packageInfo, err := firestoreClient.GetPackage(context.Background(), firestoreClient.GetClient(), packageID)
 			if err != nil {
@@ -174,7 +143,7 @@ func RunServer() {
 			firestoreClient.ScorePackage(context.Background(), firestoreClient.GetClient(), packageInfo.URL, packageInfo)
 			c.JSON(http.StatusOK, packageInfo)
 		})
-		authRoutes.GET("/packages/:id/download", func(c *gin.Context) {
+		authRoutes.GET("/package/:id/download", func(c *gin.Context) {
 			packageID := c.Param("id")
 			packageInfo, err := firestoreClient.GetPackage(context.Background(), firestoreClient.GetClient(), packageID)
 			if err != nil {
@@ -198,7 +167,7 @@ func RunServer() {
 
 			c.JSON(http.StatusOK, "Download successful")
 		})
-		authRoutes.GET("/packages/search", func(c *gin.Context) {
+		authRoutes.POST("/packages", func(c *gin.Context) {
 			packageName := c.Query("name")
 			searchResults, err := firestoreClient.SearchPackage(context.Background(), firestoreClient.GetClient(), packageName)
 			if err != nil {
@@ -212,7 +181,7 @@ func RunServer() {
 			}
 
 		})
-		authRoutes.DELETE("/packages/:id/delete", func(c *gin.Context) {
+		authRoutes.DELETE("/package/:id", func(c *gin.Context) {
 			packageName := c.Param("id")
 			if err := firestoreClient.DeletePackage(context.Background(), firestoreClient.GetClient(), packageName); err != nil {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
