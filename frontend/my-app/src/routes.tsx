@@ -7,6 +7,7 @@ import InitialPage from './pages/initial-page';
 import LoginPage from './pages/login-page';
 import SignUpPage from './pages/signup-page';
 import { getJWT } from "./utils/token";
+import { SERVICE } from "./imports";
 
 const NO_TOKEN_PATHS = ["/", "/login", "/signup"];
 
@@ -14,12 +15,9 @@ const Router: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  
   useEffect(() => {
     if (!NO_TOKEN_PATHS.includes(location.pathname)) {
       if (getJWT() === undefined || getJWT() === null) navigate("/");
-    } else {
-      //if (userId !== undefined) navigate("/login");
     }
   }, [location.pathname]);
 

@@ -16,7 +16,7 @@ const DeleteModal: React.FC<ModalProps> = ({onClose, onChange}) => {
 
   const submitHandler = () => {
     onChange();
-    fetch(`${SERVICE}/packages/delete`, {
+    fetch(`${SERVICE}/reset`, {
       method: 'DELETE',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -46,8 +46,8 @@ const DeleteModal: React.FC<ModalProps> = ({onClose, onChange}) => {
             </svg>
           </button>
           <h2 className="text-2xl font-bold mb-4">Confirm Delete</h2>
-          <p className="text-sm text-gray-600 pb-2">
-            You will delete all packages in the repo. Type "Delete" to Delete
+          <p className="text-sm text-gray-600 pb-4">
+            This will remove all packages in the repository. This will reset the repository back to its base state.
           </p>
           <form onSubmit={submitHandler} className="">
             <div className="flex flex-col space-y-4">
@@ -55,14 +55,14 @@ const DeleteModal: React.FC<ModalProps> = ({onClose, onChange}) => {
                 type="text"
                 name="name"
                 className="block w-full py-2 px-3 border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                placeholder="Delete"
+                placeholder="Type 'Delete' to Confirm"
                 required
                 value={deleteConfirm}
                 onChange={e => setDeleteConfrim(e.target.value)}
               />
             </div>
             <button
-              className="bg-red-500 disabled:opacity-50 text-white font-bold py-2 px-4 mt-3 rounded shadow-sm"
+              className="bg-red-500 disabled:opacity-50 disabled:bg-purple-500 text-white font-bold py-2 px-4 mt-3 rounded shadow-sm"
               type="submit"
               onSubmit={submitHandler}
               disabled={!validate()}

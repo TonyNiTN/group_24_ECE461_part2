@@ -1,19 +1,20 @@
 import React, {useState} from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
-import { getJWT } from '../../utils/token';
-import { SERVICE } from '../../imports';
+import {getJWT} from '../../utils/token';
+import {Package, SERVICE} from '../../imports';
 
 interface ModalProps {
   onClose: () => void;
   onChange: () => void;
+  p: Package;
 }
 
-const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
+const UpdateModal: React.FC<ModalProps> = ({onClose, onChange, p}) => {
   const [selectedFile, setSelectedFile] = useState<File>(new File([''], ''));
   const [isFileSelected, setIsFileSelected] = useState(false);
-  const [packageName, setPackageName] = useState('');
-  const [packageURL, setPackageURL] = useState('');
+  const [packageName, setPackageName] = useState(p.Name);
+  const [packageURL, setPackageURL] = useState(p.URL);
   const [fileUpload, setFileUpload] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const navigate = useNavigate();
@@ -32,13 +33,13 @@ const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
     onChange();
     const token = getJWT();
     const formData = new FormData();
-    
+
     formData.append('name', packageName);
     formData.append('url', packageURL);
     formData.append('file', selectedFile);
 
-    fetch(`${SERVICE}/package`, {
-      method: 'POST',
+    fetch(`${SERVICE}/package/${p.ID}`, {
+      method: 'PUT',
       headers: {
         Authorization: 'Bearer ' + token,
       },
@@ -77,19 +78,26 @@ const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <h2 className="text-2xl font-bold mb-4">Upload Package</h2>
+          <h2 className="text-2xl font-bold mb-4">Update Package</h2>
           <form onSubmit={submitHandler} className="">
             <div className="flex flex-col space-y-4">
               <label className="block w-full border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm cursor-pointer py-3 px-4">
                 <span className="block font-medium text-purple-500">Select a file</span>
-                <input type="file" className="hidden" onChange={changeHandler} name="file" accept="application/zip" required />
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={changeHandler}
+                  name="file"
+                  accept="application/zip"
+                  required
+                />
               </label>
 
               <input
                 type="text"
                 name="name"
                 className="block w-full py-2 px-3 border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Package Name"
+                placeholder={packageName}
                 required
                 value={packageName}
                 onChange={e => setPackageName(e.target.value)}
@@ -99,7 +107,7 @@ const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
                 type="text"
                 name="url"
                 className="block w-full py-2 px-3 border border-purple-500 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Package URL"
+                placeholder={packageURL}
                 required
                 value={packageURL}
                 onChange={e => setPackageURL(e.target.value)}
@@ -114,10 +122,10 @@ const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
             {fileUpload ? <></> : <p className="text-sm text-purple-700 py-3">{statusMessage}</p>}
             <button
               className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 mt-3 rounded shadow-sm"
-              type='submit'
+              type="submit"
               onSubmit={submitHandler}
             >
-              Upload
+              Update
             </button>
           </form>
         </div>
@@ -126,4 +134,4 @@ const UploadModal: React.FC<ModalProps> = ({onClose, onChange}) => {
   );
 };
 
-export default UploadModal;
+export default UpdateModal;

@@ -6,13 +6,14 @@ import SearchBar from '../components/search/searchbar';
 import {Package} from '../imports';
 import TableElement from '../components/table/tableElement';
 import {SERVICE} from '../imports';
-import { getJWT } from '../utils/token';
+import {getJWT} from '../utils/token';
 import DeleteModal from '../components/modals/delete';
-
+import UpdateModal from '../components/modals/update';
 
 const HomePage = () => {
   const [isUploadModalOpen, setisUploadModalOpen] = useState(false);
-  const [isDeleteModalOpen, setisDeleteModalOpen] = useState(false)
+  const [isDeleteModalOpen, setisDeleteModalOpen] = useState(false);
+ 
   const [packages, setPackages] = useState<Package[]>([]);
   const [packageState, setPackageState] = useState(false);
   const [loadingPackage, setLoadingPackages] = useState(false);
@@ -27,13 +28,15 @@ const HomePage = () => {
     setisUploadModalOpen(false);
   };
 
-   const handleOpenDeleteModal = () => {
-     setisDeleteModalOpen(true);
-   };
+  const handleOpenDeleteModal = () => {
+    setisDeleteModalOpen(true);
+  };
 
-   const handleCloseDeleteModal = () => {
-     setisDeleteModalOpen(false);
-   };
+  const handleCloseDeleteModal = () => {
+    setisDeleteModalOpen(false);
+  };
+
+  
 
   const handleSubmitSearchBar = (e: any) => {
     e.preventDefault();
@@ -47,8 +50,8 @@ const HomePage = () => {
   useEffect(() => {
     setLoadingPackages(true);
     const timeOutId = setTimeout(() => {
-      const token = getJWT()
-      fetch(`${SERVICE}/packages/search?name=${packageSearch}`, {
+      const token = getJWT();
+      fetch(`${SERVICE}/packages?name=${packageSearch}`, {
         method: 'GET',
         headers: {
           Authorization: 'Bearer ' + token,
@@ -58,12 +61,16 @@ const HomePage = () => {
           if (response.status === 401 || response.status === 403) {
             navigate('/');
           }
-          return response.json()
+          return response.json();
         })
         .then(result => {
           console.log('Success:', result);
           setLoadingPackages(false);
-          setPackages(result);
+          if (result.message) {
+            setPackages([]);
+          } else {
+            setPackages(result);
+          }
         })
         .catch(error => {
           setLoadingPackages(false);
@@ -82,7 +89,10 @@ const HomePage = () => {
     <div>
       <div className="flex flex-ro ml-4 mt-4 items-center">
         <p className="text-2xl font-bold text-purple-600 pr-8">Package Repository</p>
-        <button className="bg-gray-300 text-gray-50 p-2 rounded-lg shadow-sm" onClick={handleOpenDeleteModal}>
+        <button
+          className="bg-gray-400 text-gray-50 font-bold p-2 rounded-lg shadow-sm hover:bg-gray-700"
+          onClick={handleOpenDeleteModal}
+        >
           Reset Repo
         </button>
       </div>

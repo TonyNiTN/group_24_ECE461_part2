@@ -13,7 +13,7 @@ backend "local" {
 
 provider "google" {
   #credentials = "Users/tonyni/.config/gcloud/application_default_credentials.json"
-  project     = "group24ece404"
+  project     = "group-24-ece461"
   region      = "us-east1"
 }
 
@@ -30,6 +30,7 @@ resource "google_storage_bucket" "static_website" {
   #uniform_bucket_level_access = true
   website {
     main_page_suffix = "index.html"
+    not_found_page =  "index.html"
   }
 }
 # Make bucket public
@@ -80,30 +81,6 @@ resource "google_compute_global_forwarding_rule" "default" {
   port_range            = "80"
   target                = google_compute_target_http_proxy.default.id
   ip_address            = google_compute_global_address.dev_cdn_ip.id
-}
-
-# Upload a simple index.html page to the bucket
-resource "google_storage_bucket_object" "indexHtml" {
-  name         = "index.html"
-  source      = "../../my-app/dist/index.html"
-  content_type = "text/html"
-  bucket       = google_storage_bucket.static_website.id
-}
-
-# Upload a simple index.html page to the bucket
-resource "google_storage_bucket_object" "indexCSS" {
-  name         = "assets/index-6e9558c7.css"
-  source      = "../../my-app/dist/assets/index-6e9558c7.css"
-  content_type = "text/css"
-  bucket       = google_storage_bucket.static_website.id
-}
-
-# Upload a simple index.html page to the bucket
-resource "google_storage_bucket_object" "indexJS" {
-  name         = "assets/index-d8d261c8.js"
-  source      = "../../my-app/dist/assets/index-d8d261c8.js"
-  content_type = "text/javascript"
-  bucket       = google_storage_bucket.static_website.id
 }
 
 output "cdn_ip_addr" {

@@ -3,6 +3,7 @@ import {Package} from '../../imports';
 import {SERVICE} from '../../imports';
 import {getJWT} from '../../utils/token';
 import { useNavigate } from 'react-router-dom';
+import UpdateModal from '../modals/update';
 
 interface TableElementProps {
   onChange: () => void;
@@ -11,13 +12,25 @@ interface TableElementProps {
 
 const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) => {
   const [showScore, setShowScore] = useState(false);
+  const [isUpdateModalOpen, setisUpdateModalOpen] = useState(false);
+
+  const handleOpenUpdateModal = () => {
+    setisUpdateModalOpen(true);
+  };
+  const handleCloseUpdateModal = () => {
+    setisUpdateModalOpen(false);
+  };
+
   const navigate = useNavigate()
   const packageId = displayPackage.ID;
 
+  /**
+   * Download Packages
+   */
   const handleDownloadPackage = () => {
     const token = getJWT();
 
-    fetch(`${SERVICE}/packages/${packageId}/download`, {
+    fetch(`${SERVICE}/package/${packageId}/download`, {
       method: 'GET',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -46,10 +59,13 @@ const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) =
       });
   };
 
+  /**
+   * Delete Package
+   */
   const handleDeletePackage = () => {
     onChange();
     const token = getJWT();
-    fetch(`${SERVICE}/packages/${packageId}/delete`, {
+    fetch(`${SERVICE}/package/${packageId}`, {
       method: 'DELETE',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -71,10 +87,13 @@ const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) =
       });
   };
 
+  /**
+   * Score Package
+   */
   const handleScorePackage = () => {
     onChange();
     const token = getJWT();
-    fetch(`${SERVICE}/packages/${packageId}/score`, {
+    fetch(`${SERVICE}/package/${packageId}/rate`, {
       method: 'GET',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -127,6 +146,7 @@ const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) =
           Show Breakdown
         </button>
         {showScore && packageScoreBreakdown}
+        {isUpdateModalOpen && <UpdateModal onClose={handleCloseUpdateModal} onChange={onChange} p={displayPackage} />}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center space-x-4">
@@ -135,6 +155,12 @@ const TableElement: React.FC<TableElementProps> = ({onChange, displayPackage}) =
             className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
           >
             Download
+          </button>
+          <button
+            onClick={handleOpenUpdateModal}
+            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Update
           </button>
           <button
             onClick={handleScorePackage}
