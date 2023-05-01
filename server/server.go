@@ -119,6 +119,11 @@ func RunServer() {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
 
+			if err := client.RemovePackage(packageID); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
 			file, header, err := c.Request.FormFile("file")
 			if err != nil {
 				c.JSON(http.StatusBadRequest, "error getting file from form")
@@ -130,6 +135,7 @@ func RunServer() {
 				c.JSON(http.StatusInternalServerError, "error uploading file")
 				return
 			}
+
 			c.JSON(http.StatusOK, gin.H{"message": "package updated"})
 		})
 
@@ -182,11 +188,16 @@ func RunServer() {
 
 		})
 		authRoutes.DELETE("/package/:id", func(c *gin.Context) {
-			packageName := c.Param("id")
-			if err := firestoreClient.DeletePackage(context.Background(), firestoreClient.GetClient(), packageName); err != nil {
-				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			packageID := c.Param("id")
+			if err := firestoreClient.DeletePackage(context.Background(), firestoreClient.GetClient(), packageID); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
+			if err := client.RemovePackage(packageID); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
 			c.JSON(http.StatusOK, gin.H{"message": "package deleted"})
 		})
 
@@ -196,9 +207,20 @@ func RunServer() {
 				return
 			}
 
+			if err := client.ResetBucket(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reset buckets"})
+				return
+			}
+
 			c.JSON(http.StatusOK, gin.H{"messsage": "database successfully reset"})
 		})
 	}
+
+	//API HOME
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Team 24 package registry api! You must be authenticated to use the endpoints!", "usage": "To use the api refer to the docs at https://app.swaggerhub.com/apis/YIGITKANBALCI/trusted-package-registry/v1",
+			"ui": "To use the GUI, please visit http://ece461-dev.tonyni.ca/home", "repo": "https://github.com/TonyNiTN/group_24_ECE461_part2"})
+	})
 
 	//LOGIN A USER
 	r.POST("/login", func(c *gin.Context) {

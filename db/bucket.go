@@ -146,7 +146,45 @@ func (db *DB) DownloadFile(packageID string, w http.ResponseWriter, r *http.Requ
 	return nil
 }
 
-func (db *DB) RemovePackage(packageName string) error {
+func (db *DB) ResetBucket() error {
+	query := &storage.Query{Prefix: ""}
+	ctx := context.Background()
+	it := db.bucket.Objects(ctx, query)
+	for {
+		objAttrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			logger.DebugMsg("error getting next bucket object")
+			return err
+		}
+		obj := db.bucket.Object(objAttrs.Name)
+		if err := obj.Delete(ctx); err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (db *DB) RemovePackage(packageID string) error {
+	query := &storage.Query{Prefix: ""} // Set prefix to an empty string to search all objects in the bucket
+	it := db.bucket.Objects(context.Background(), query)
+	var packageName string
+	for {
+		objAttrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to iterate through objects: %v", err)
+		}
+
+		if objAttrs.Metadata["id"] == packageID {
+			packageName = objAttrs.Name
+		}
+	}
 	obj := db.bucket.Object(packageName)
 
 	err := obj.Delete(db.ctx)

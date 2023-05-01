@@ -218,7 +218,11 @@ func (db *Table) ResetTable() error {
 		}
 	}
 
-	clearCacheFile("cache")
+	err := clearCacheFile("cache")
+	if err != nil {
+		logger.DebugMsg("error clearing cache")
+		return err
+	}
 	return nil
 }
 
