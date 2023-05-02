@@ -1,9 +1,6 @@
 package worker
 
 import (
-	"encoding/json"
-	"io/ioutil"
-
 	"github.com/19chonm/461_1_23/api"
 	"github.com/19chonm/461_1_23/fileio"
 	"github.com/19chonm/461_1_23/logger"
@@ -67,7 +64,6 @@ func RunTask(url string) *fileio.Rating {
 	if err != nil {
 		// fmt.Println("worker: ERROR Unable to get data for ", github_url, " GetCorrectnessFactors Errored:", err)
 		logger.DebugMsg("worker: ERROR Unable to get data for ", github_url, " GetCorrectnessFactors Errored:", err.Error())
-		return nil
 	}
 
 	// Compute scores
@@ -101,37 +97,4 @@ func RunTask(url string) *fileio.Rating {
 	}
 
 	return &r
-}
-
-func ReadMapFromFile(filename string) (map[string]interface{}, error) {
-	// Read file contents into byte slice
-	jsonData, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal JSON into map[string]interface{}
-	var data map[string]interface{}
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func WriteMapToFile(data map[string]interface{}, filename string) error {
-	// Convert map to JSON bytes
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	// Write JSON bytes to file
-	err = ioutil.WriteFile(filename, jsonData, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

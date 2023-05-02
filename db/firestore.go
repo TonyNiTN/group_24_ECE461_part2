@@ -126,6 +126,7 @@ func (db *Table) GetPackage(ctx context.Context, client *firestore.Client, packa
 
 func (db *Table) ScorePackage(ctx context.Context, client *firestore.Client, url string, packageInfo *Package) {
 	rating := worker.RunTask(url)
+
 	if rating == nil {
 		logger.DebugMsg("ratings are nil! make sure you entered a valid github or NPM URL")
 		packageInfo.BusFactorScore = "0.00"
