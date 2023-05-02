@@ -126,14 +126,26 @@ func (db *Table) GetPackage(ctx context.Context, client *firestore.Client, packa
 
 func (db *Table) ScorePackage(ctx context.Context, client *firestore.Client, url string, packageInfo *Package) {
 	rating := worker.RunTask(url)
-	packageInfo.BusFactorScore = fmt.Sprintf("%.2f", rating.Busfactor)
-	packageInfo.RampUpScore = fmt.Sprintf("%.2f", rating.Rampup)
-	packageInfo.CorrectnessScore = fmt.Sprintf("%.2f", rating.Correctness)
-	packageInfo.ResponsivenessScore = fmt.Sprintf("%.2f", rating.Responsiveness)
-	packageInfo.LicenseScore = fmt.Sprintf("%.2f", rating.License)
-	packageInfo.VersionScore = fmt.Sprintf("%.2f", rating.Version)
-	packageInfo.ReviewScore = fmt.Sprintf("%.2f", rating.Review)
-	packageInfo.NetScore = fmt.Sprintf("%.2f", rating.NetScore)
+	if rating == nil {
+		logger.DebugMsg("ratings are nil! make sure you entered a valid github or NPM URL")
+		packageInfo.BusFactorScore = "0.00"
+		packageInfo.RampUpScore = "0.00"
+		packageInfo.CorrectnessScore = "0.00"
+		packageInfo.ResponsivenessScore = "0.00"
+		packageInfo.LicenseScore = "0.00"
+		packageInfo.VersionScore = "0.00"
+		packageInfo.ReviewScore = "0.00"
+		packageInfo.NetScore = "0.00"
+	} else {
+		packageInfo.BusFactorScore = fmt.Sprintf("%.2f", rating.Busfactor)
+		packageInfo.RampUpScore = fmt.Sprintf("%.2f", rating.Rampup)
+		packageInfo.CorrectnessScore = fmt.Sprintf("%.2f", rating.Correctness)
+		packageInfo.ResponsivenessScore = fmt.Sprintf("%.2f", rating.Responsiveness)
+		packageInfo.LicenseScore = fmt.Sprintf("%.2f", rating.License)
+		packageInfo.VersionScore = fmt.Sprintf("%.2f", rating.Version)
+		packageInfo.ReviewScore = fmt.Sprintf("%.2f", rating.Review)
+		packageInfo.NetScore = fmt.Sprintf("%.2f", rating.NetScore)
+	}
 
 	err := db.UpdatePackage(ctx, client, packageInfo, packageInfo.ID)
 	if err != nil {
