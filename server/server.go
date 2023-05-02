@@ -203,7 +203,7 @@ func RunServer() {
 
 		authRoutes.DELETE("/reset", func(c *gin.Context) {
 			if err := firestoreClient.ResetTable(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reset database"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
 
