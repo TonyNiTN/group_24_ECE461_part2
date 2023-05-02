@@ -52,7 +52,7 @@ const HomePage = () => {
     const timeOutId = setTimeout(() => {
       const token = getJWT();
       fetch(`${SERVICE}/packages?name=${packageSearch}`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           Authorization: 'Bearer ' + token,
         },
